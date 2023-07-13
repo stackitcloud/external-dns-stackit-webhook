@@ -40,12 +40,12 @@ func TestApplyChanges(t *testing.T) {
 func testApplyChanges(t *testing.T, changeType ChangeType) {
 	t.Helper()
 	ctx := context.Background()
-	validRespJson := getValidResponseZoneALlBytes(t)
+	validZoneResponse := getValidResponseZoneALlBytes(t)
 	validRRSetResponse := getValidResponseRRSetAllBytes(t)
-	invalidRespJson := []byte(`{"invalid: "json"`)
+	invalidZoneResponse := []byte(`{"invalid: "json"`)
 
 	// Test cases
-	tests := getApplyChangesBasicTestCases(validRespJson, validRRSetResponse, invalidRespJson)
+	tests := getApplyChangesBasicTestCases(validZoneResponse, validRRSetResponse, invalidZoneResponse)
 
 	for _, tt := range tests {
 		tt := tt
@@ -77,6 +77,69 @@ func testApplyChanges(t *testing.T, changeType ChangeType) {
 			}
 		})
 	}
+}
+
+func TestNoMatchingZoneFound(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	validZoneResponse := getValidResponseZoneALlBytes(t)
+
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	// Set up common endpoint for all types of changes
+	setUpCommonEndpoints(mux, validZoneResponse, http.StatusOK)
+
+	stackitDnsProvider, err := getDefaultTestProvider(server)
+	assert.NoError(t, err)
+
+	changes := &plan.Changes{
+		Create: []*endpoint.Endpoint{
+			{DNSName: "notfound.com", Targets: endpoint.Targets{"test.notfound.com"}},
+		},
+		UpdateNew: []*endpoint.Endpoint{},
+		Delete:    []*endpoint.Endpoint{},
+	}
+
+	err = stackitDnsProvider.ApplyChanges(ctx, changes)
+	assert.Error(t, err)
+}
+
+func TestNoRRSetFound(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	validZoneResponse := getValidResponseZoneALlBytes(t)
+	rrSets := getValidResponseRRSetAll()
+	rrSets.RrSets[0].Name = "notfound.test.com"
+	validRRSetResponse, err := json.Marshal(rrSets)
+	assert.NoError(t, err)
+
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	// Set up common endpoint for all types of changes
+	setUpCommonEndpoints(mux, validZoneResponse, http.StatusOK)
+
+	mux.HandleFunc(
+		"/v1/projects/1234/zones/1234/rrsets",
+		responseHandler(validRRSetResponse, http.StatusOK),
+	)
+
+	stackitDnsProvider, err := getDefaultTestProvider(server)
+	assert.NoError(t, err)
+
+	changes := &plan.Changes{
+		UpdateNew: []*endpoint.Endpoint{
+			{DNSName: "test.com", Targets: endpoint.Targets{"notfound.test.com"}},
+		},
+	}
+
+	err = stackitDnsProvider.ApplyChanges(ctx, changes)
+	assert.Error(t, err)
 }
 
 // setUpCommonEndpoints for all change types.
@@ -153,9 +216,9 @@ func getChangeTypeChanges(changeType ChangeType) *plan.Changes {
 }
 
 func getApplyChangesBasicTestCases( //nolint:funlen // Test cases are long
-	validRespJson []byte,
+	validZoneResponse []byte,
 	validRRSetResponse []byte,
-	invalidRespJson []byte,
+	invalidZoneResponse []byte,
 ) []struct {
 	name                string
 	responseZone        []byte
@@ -176,7 +239,7 @@ func getApplyChangesBasicTestCases( //nolint:funlen // Test cases are long
 	}{
 		{
 			"Valid response",
-			validRespJson,
+			validZoneResponse,
 			http.StatusOK,
 			validRRSetResponse,
 			http.StatusAccepted,
@@ -203,7 +266,7 @@ func getApplyChangesBasicTestCases( //nolint:funlen // Test cases are long
 		},
 		{
 			"Zone response Invalid JSON",
-			invalidRespJson,
+			invalidZoneResponse,
 			http.StatusOK,
 			validRRSetResponse,
 			http.StatusAccepted,
@@ -212,7 +275,7 @@ func getApplyChangesBasicTestCases( //nolint:funlen // Test cases are long
 		},
 		{
 			"Zone response, Rrset response 403",
-			validRespJson,
+			validZoneResponse,
 			http.StatusOK,
 			nil,
 			http.StatusForbidden,
@@ -221,7 +284,7 @@ func getApplyChangesBasicTestCases( //nolint:funlen // Test cases are long
 		},
 		{
 			"Zone response, Rrset response 500",
-			validRespJson,
+			validZoneResponse,
 			http.StatusOK,
 			nil,
 			http.StatusInternalServerError,
@@ -231,9 +294,9 @@ func getApplyChangesBasicTestCases( //nolint:funlen // Test cases are long
 		// swagger client does not return an error when the response is invalid json
 		{
 			"Zone response, Rrset response Invalid JSON",
-			validRespJson,
+			validZoneResponse,
 			http.StatusOK,
-			invalidRespJson,
+			invalidZoneResponse,
 			http.StatusAccepted,
 			false,
 			http.MethodPost,
@@ -257,10 +320,10 @@ func getValidResponseZoneALlBytes(t *testing.T) []byte {
 	t.Helper()
 
 	zones := getValidZoneResponseAll()
-	validRespJson, err := json.Marshal(zones)
+	validZoneResponse, err := json.Marshal(zones)
 	assert.NoError(t, err)
 
-	return validRespJson
+	return validZoneResponse
 }
 
 func getValidZoneResponseAll() stackitdnsclient.ZoneResponseZoneAll {
