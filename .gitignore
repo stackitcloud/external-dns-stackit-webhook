@@ -25,3 +25,6 @@ go.work
 
 # test
 out/
+bin/
+reports/
+dist/

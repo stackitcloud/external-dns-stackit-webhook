@@ -3,7 +3,6 @@ package stackitprovider
 import (
 	"fmt"
 	"net/http"
-	"os"
 
 	stackitdnsclient "github.com/stackitcloud/stackit-dns-api-client-go"
 	"go.uber.org/zap"
@@ -32,15 +31,7 @@ func NewStackitDNSProvider(
 ) (*StackitDNSProvider, error) {
 	configClient := stackitdnsclient.NewConfiguration()
 
-	token := config.Token
-	if token == "" {
-		token = os.Getenv("EXTERNAL_DNS_STACKIT_CLIENT_TOKEN")
-	}
-	if token == "" {
-		return nil, fmt.Errorf("no token found")
-	}
-
-	configClient.DefaultHeader["Authorization"] = fmt.Sprintf("Bearer %s", token)
+	configClient.DefaultHeader["Authorization"] = fmt.Sprintf("Bearer %s", config.Token)
 	configClient.BasePath = config.BasePath
 	configClient.HTTPClient = httpClient
 	apiClient := stackitdnsclient.NewAPIClient(configClient)

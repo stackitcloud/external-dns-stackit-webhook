@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 
@@ -19,15 +18,12 @@ import (
 )
 
 var (
-	apiPort              string
-	authBearerToken      string
-	baseUrl              string
-	projectID            string
-	worker               int
-	domainFilter         []string
-	domainExclude        []string
-	domainRegex          string
-	domainRegexExclusion string
+	apiPort         string
+	authBearerToken string
+	baseUrl         string
+	projectID       string
+	worker          int
+	domainFilter    []string
 )
 
 var rootCmd = &cobra.Command{
@@ -35,6 +31,10 @@ var rootCmd = &cobra.Command{
 	Short: "provider webhook for the STACKIT DNS service",
 	Long:  "provider webhook for the STACKIT DNS service",
 	Run: func(cmd *cobra.Command, args []string) {
+		if len(authBearerToken) == 0 {
+			panic("auth-token is required")
+		}
+
 		logger, errLogger := zap.NewProduction()
 		if errLogger != nil {
 			panic(errLogger)
@@ -46,13 +46,7 @@ var rootCmd = &cobra.Command{
 			}
 		}(logger)
 
-		endpointDomainFilter := endpoint.DomainFilter{}
-		if domainRegex != "" {
-			endpointDomainFilter = endpoint.NewRegexDomainFilter(regexp.MustCompile(domainRegex), regexp.MustCompile(domainRegexExclusion))
-		} else {
-			endpointDomainFilter.Filters = domainFilter
-			endpointDomainFilter = endpoint.NewDomainFilterWithExclusions(endpointDomainFilter.Filters, domainExclude)
-		}
+		endpointDomainFilter := endpoint.DomainFilter{Filters: domainFilter}
 
 		stackitProvider, err := stackitprovider.NewStackitDNSProvider(stackitprovider.Config{
 			BasePath:     baseUrl,
@@ -84,16 +78,13 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&apiPort, "api-port", "8888", "Port to listen on for the API")
-	rootCmd.PersistentFlags().StringVar(&authBearerToken, "auth-bearer-token", "", "Bearer token to use for authentication")
-	rootCmd.PersistentFlags().StringVar(&baseUrl, "base-url", "http://localhost:3000", "Base URL to use for the API")
+	rootCmd.PersistentFlags().StringVar(&authBearerToken, "auth-token", "", "Bearer token to use for authentication")
+	rootCmd.PersistentFlags().StringVar(&baseUrl, "base-url", "https://dns.api.stackit.cloud", "Base URL to use for the API")
 	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", "", "Project to use for the API")
 	rootCmd.PersistentFlags().IntVar(&worker, "worker", 10, "Number of workers to use for querying the API. "+
 		"Since we have to iterate over all zones and records we can parallelize it. But keep in mind to not set it too high "+
 		"since you will receive 429 rate limiting from the API")
-	rootCmd.PersistentFlags().StringArrayVar(&domainFilter, "domain-filter", []string{}, "Filter to apply to DNS records. Only this filter or the domain regex filter can be used at the same time")
-	rootCmd.PersistentFlags().StringArrayVar(&domainExclude, "exclude-domain-filter", []string{}, "Filter to exclude DNS records")
-	rootCmd.PersistentFlags().StringVar(&domainRegex, "domain-regex-filter", "", "Regex to apply to DNS records. Only this filter or the domain filter can be used at the same time")
-	rootCmd.PersistentFlags().StringVar(&domainRegexExclusion, "exclude-domain-regex-filter", "", "Regex to exclude DNS records")
+	rootCmd.PersistentFlags().StringArrayVar(&domainFilter, "domain-filter", []string{}, "Filter to filter dns zone names")
 }
 
 func initConfig() {
