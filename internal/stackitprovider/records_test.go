@@ -240,7 +240,7 @@ func getRrsetsHandlerReecodsPaged(t *testing.T, domain string) http.HandlerFunc 
 				Message:      "success",
 				RrSets: []stackitdnsclient.DomainRrSet{
 					{
-						Name:  "test.com",
+						Name:  "test.com.",
 						Type_: "A",
 						Ttl:   300,
 						Records: []stackitdnsclient.DomainRecord{
@@ -258,7 +258,7 @@ func getRrsetsHandlerReecodsPaged(t *testing.T, domain string) http.HandlerFunc 
 				Message:      "success",
 				RrSets: []stackitdnsclient.DomainRrSet{
 					{
-						Name:  "test2.com",
+						Name:  "test2.com.",
 						Type_: "A",
 						Ttl:   300,
 						Records: []stackitdnsclient.DomainRecord{
@@ -303,8 +303,8 @@ func getZonesResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter) {
 		TotalItems:   2,
 		TotalPages:   1,
 		Zones: []stackitdnsclient.DomainZone{
-			{Id: "1234"},
-			{Id: "5678"},
+			{Id: "1234", DnsName: "test.com"},
+			{Id: "5678", DnsName: "test2.com"},
 		},
 	}
 	successResponseBytes, err := json.Marshal(zones)
@@ -327,12 +327,13 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 			Message:      "success",
 			RrSets: []stackitdnsclient.DomainRrSet{
 				{
-					Name:  "test.com",
+					Name:  "test.com.",
 					Type_: "A",
 					Ttl:   300,
 					Records: []stackitdnsclient.DomainRecord{
 						{Content: "1.2.3.4"},
 					},
+					Id: "1234",
 				},
 			},
 			TotalItems: 2,
@@ -344,12 +345,13 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 			Message:      "success",
 			RrSets: []stackitdnsclient.DomainRrSet{
 				{
-					Name:  "test2.com",
+					Name:  "test2.com.",
 					Type_: "A",
 					Ttl:   300,
 					Records: []stackitdnsclient.DomainRecord{
 						{Content: "5.6.7.8"},
 					},
+					Id: "5678",
 				},
 			},
 			TotalItems: 2,
