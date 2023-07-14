@@ -1,5 +1,10 @@
 # STACKIT Webhook - ExternalDNS
 
+[![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
+[![CI](https://github.com/stackitcloud/stackit-api-manager-cli/actions/workflows/main.yml/badge.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/actions/workflows/main.yml)
+[![Semgrep](https://github.com/stackitcloud/stackit-api-manager-cli/actions/workflows/semgrep.yml/badge.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/actions/workflows/semgrep.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/stackitcloud/stackit-api-manager-cli)](https://goreportcard.com/report/github.com/stackitcloud/external-dns-stackit-webhook)
+
 ⚠️ CAUTION: This Webhook is designed on an unreleased edition of 
 [ExternalDNS](https://github.com/kubernetes-sigs/external-dns), specifically focusing on the novel integration 
 method via webhooks, as deliberated and constructed 
