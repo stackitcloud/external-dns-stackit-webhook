@@ -1,9 +1,6 @@
 project_name: external-dns-stackit-webhook
 snapshot:
   name_template: '{{ .Tag }}-SNAPSHOT'
-before:
-  hooks:
-    - go mod tidy
 builds:
   - id: external-dns-stackit-webhook
     goos:
