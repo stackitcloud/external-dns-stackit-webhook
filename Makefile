@@ -9,10 +9,6 @@ BUILD_VERSION ?= $(shell git branch --show-current)
 BUILD_COMMIT ?= $(shell git rev-parse --short HEAD)
 BUILD_TIMESTAMP ?= $(shell date -u '+%Y-%m-%d %H:%M:%S')
 
-GOLDFLAGS += -X 'stackitcloud/external-dns-stackit-webhook/internal/version.buildVersion=$(BUILD_VERSION)'
-GOLDFLAGS += -X 'stackitcloud/external-dns-stackit-webhook/version.buildCommit=$(BUILD_COMMIT)'
-GOLDFLAGS += -X 'stackitcloud/external-dns-stackit-webhook/internal/version.buildTimestamp=$(BUILD_TIMESTAMP)'
-
 PWD = $(shell pwd)
 export PATH := $(PWD)/bin:$(PATH)
 
@@ -21,11 +17,7 @@ download:
 
 .PHONY: build
 build:
-	CGO_ENABLED=0 go build -ldflags "$(GOLDFLAGS)" -o ./bin/external-dns-stackit-webhook -v cmd/webhook/main.go
-
-.PHONY: build-amd64
-build-amd64:
-	GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "$(GOLDFLAGS)" -o ./bin/external-dns-stackit-webhook -v cmd/webhook/main.go
+	CGO_ENABLED=0 go build -ldflags "-s -w" -o ./bin/external-dns-stackit-webhook -v cmd/webhook/main.go
 
 .PHONY: docker-build
 docker-build:

@@ -10,7 +10,7 @@ RUN apt-get update && \
 WORKDIR /build
 COPY . .
 
-RUN make build-amd64
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o ./bin/external-dns-stackit-webhook -v cmd/webhook/main.go
 
 FROM gcr.io/distroless/static-debian11
 
