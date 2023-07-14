@@ -46,7 +46,7 @@ archives:
       - src: CHANGELOG*
 dockers:
   - id: external-dns-stackit-webhook
-    use: buildx
+    use: docker
     image_templates:
       - "{{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:{{ .Tag }}"
       - "{{ .Env.REGISTRY }}/{{ .Env.IMAGE_NAME }}:latest"
