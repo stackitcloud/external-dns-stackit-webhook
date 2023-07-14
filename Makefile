@@ -21,7 +21,7 @@ build:
 
 .PHONY: docker-build
 docker-build:
-	docker build -t $(IMG) -f build/Dockerfile .
+	docker build -t $(IMG) -f Dockerfile .
 
 test:
 	go test -race ./...
