@@ -77,14 +77,15 @@ func Execute() error {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&apiPort, "api-port", "8888", "Port to listen on for the API")
-	rootCmd.PersistentFlags().StringVar(&authBearerToken, "auth-token", "", "Bearer token to use for authentication")
-	rootCmd.PersistentFlags().StringVar(&baseUrl, "base-url", "https://dns.api.stackit.cloud", "Base URL to use for the API")
-	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", "", "Project to use for the API")
-	rootCmd.PersistentFlags().IntVar(&worker, "worker", 10, "Number of workers to use for querying the API. "+
-		"Since we have to iterate over all zones and records we can parallelize it. But keep in mind to not set it too high "+
-		"since you will receive 429 rate limiting from the API")
-	rootCmd.PersistentFlags().StringArrayVar(&domainFilter, "domain-filter", []string{}, "Filter to filter dns zone names")
+	rootCmd.PersistentFlags().StringVar(&apiPort, "api-port", "8888", "Specifies the port to listen on.")
+	rootCmd.PersistentFlags().StringVar(&authBearerToken, "auth-token", "", "Defines the authentication token for the STACKIT API.")
+	rootCmd.PersistentFlags().StringVar(&baseUrl, "base-url", "https://dns.api.stackit.cloud", " Identifies the Base URL for utilizing the API.")
+	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", "", "Specifies the project id of the STACKIT project.")
+	rootCmd.PersistentFlags().IntVar(&worker, "worker", 10, "Specifies the number "+
+		"of workers to employ for querying the API. Given that we need to iterate over all zones and "+
+		"records, it can be parallelized. However, it is important to avoid setting this number "+
+		"excessively high to prevent receiving 429 rate limiting from the API.")
+	rootCmd.PersistentFlags().StringArrayVar(&domainFilter, "domain-filter", []string{}, "Establishes a filter for DNS zone names")
 }
 
 func initConfig() {
