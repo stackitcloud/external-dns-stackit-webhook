@@ -24,10 +24,10 @@ jobs:
           fetch-depth: 0
       - name: Git Fetch
         run: git fetch --force --tags
-      - name: Set up Go
-        uses: actions/setup-go@fac708d6674e30b6ba41289acaab6d4b75aa0753 # v4.0.1
+      - name: Setup go
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.20
+          go-version: stable
       - uses: actions/cache@88522ab9f39a2ea568f7027eddc7d8d8bc9d59c8 # v3.3.1
         with:
           path: |
@@ -52,9 +52,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@336e29918d653399e599bfca99fadc1d7ffbc9f7 # v4.3.0
+      - name: Release with Goreleaser
+        uses: goreleaser/goreleaser-action@v4
         with:
+          distribution: goreleaser
           version: latest
           args: release --clean
         env:
