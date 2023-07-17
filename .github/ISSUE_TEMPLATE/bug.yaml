@@ -4,6 +4,7 @@ labels: [ bug, triage ]
 assignees:
   - patrickkoss
   - Slm0n87
+  - mgalm
 body:
   - type: markdown
     attributes:
