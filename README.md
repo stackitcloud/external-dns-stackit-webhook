@@ -142,7 +142,7 @@ spec:
             - --source=ingress
             - --policy=sync
             - --provider=webhook
-            - --webhook-provider-url="http://localhost:8888"
+            - --webhook-provider-url=http://localhost:8888
           ports:
             - name: http
               protocol: TCP
@@ -176,7 +176,7 @@ spec:
           image: ghcr.io/stackitcloud/external-dns-stackit-webhook:v0.1.0
           imagePullPolicy: IfNotPresent
           args:
-            - --project-id="c158c736-0300-4044-95c4-b7d404279b35" # your project id
+            - --project-id=c158c736-0300-4044-95c4-b7d404279b35 # your project id
           ports:
             - name: http
               protocol: TCP
