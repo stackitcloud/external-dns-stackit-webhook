@@ -69,7 +69,7 @@ docker_signs:
       - --yes
     artifacts: images
     ids:
-      - external-dns-ionos-webhook
+      - external-dns-stackit-webhook
     output: true
 signs:
   - cmd: cosign
