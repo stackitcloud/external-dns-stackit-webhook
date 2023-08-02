@@ -14,7 +14,7 @@ require (
 	github.com/stackitcloud/stackit-dns-api-client-go v0.0.0-20230228185514-6838d6d6f051
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/mock v0.2.0
-	go.uber.org/zap v1.24.0
+	go.uber.org/zap v1.25.0
 	sigs.k8s.io/external-dns v0.13.5
 )
 
@@ -59,7 +59,6 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.48.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/oauth2 v0.10.0 // indirect
