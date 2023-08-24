@@ -9,7 +9,7 @@ import (
 
 // HttpApiMetrics is an interface that defines the methods that can be used to collect metrics.
 //
-//go:generate mockgen -destination=./mock/http_middleware.go github.com/stackitcloud/external-dns-stackit-webhook HttpApiMetrics
+//go:generate mockgen -destination=./mock/http_middleware.go -source=./http_middleware.go HttpApiMetrics
 type HttpApiMetrics interface {
 	// CollectTotalRequests increment the total requests for the api
 	CollectTotalRequests()
