@@ -62,7 +62,7 @@ func (a api) Listen(port string) error {
 	return err
 }
 
-//go:generate mockgen -destination=./mock/provider.go github.com/stackitcloud/external-dns-stackit-webhook Provider
+//go:generate mockgen -destination=./mock/provider.go -source=./provider.go Provider
 type Provider interface {
 	provider.Provider
 }
