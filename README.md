@@ -11,11 +11,6 @@
 [![GitHub stars](https://img.shields.io/github/stars/stackitcloud/external-dns-stackit-webhook.svg?style=social&label=Star&maxAge=2592000)](https://github.com/stackitcloud/external-dns-stackit-webhook/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/stackitcloud/external-dns-stackit-webhook.svg?style=social&label=Fork&maxAge=2592000)](https://github.com/stackitcloud/external-dns-stackit-webhook/network)
 
-⚠️ CAUTION: This Webhook is designed on an unreleased edition of 
-[ExternalDNS](https://github.com/kubernetes-sigs/external-dns), specifically focusing on the novel integration 
-method via webhooks, as deliberated and constructed 
-in [PR-3063](https://github.com/kubernetes-sigs/external-dns/pull/3063).
-
 ExternalDNS serves as an add-on for Kubernetes designed to automate the management of Domain Name System (DNS) 
 records for Kubernetes services by utilizing various DNS providers. While Kubernetes traditionally manages DNS 
 records internally, ExternalDNS augments this functionality by transferring the responsibility of DNS records 
@@ -225,6 +220,7 @@ setting this number excessively high to prevent receiving 429 rate limiting from
 - `--base-url`/`BASE_URL` (optional): Identifies the Base URL for utilizing the API (default "https://dns.api.stackit.cloud").
 - `--api-port`/`API_PORT` (optional): Specifies the port to listen on (default 8888).
 - `--domain-filter`/`DOMAIN_FILER` (optional): Establishes a filter for DNS zone names (default []).
+- `--dry-run`/`DRY_RUN` (optional): Specifies whether to perform a dry run (default false).
 
 ## Development
 Run the app:

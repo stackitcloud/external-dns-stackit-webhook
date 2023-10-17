@@ -18,7 +18,6 @@ func (w webhook) Records(ctx *fiber.Ctx) error {
 	w.logger.Debug("returning records", zap.String("records", fmt.Sprintf("%v", records)))
 
 	ctx.Response().Header.Set(varyHeader, contentTypeHeader)
-	ctx.Response().Header.Set(contentTypeHeader, string(mediaTypeVersion1))
 
 	return ctx.JSON(records)
 }

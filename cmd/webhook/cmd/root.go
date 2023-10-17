@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"go.uber.org/zap/zapcore"
 	"log"
 	"net/http"
 	"strings"
@@ -24,6 +25,8 @@ var (
 	projectID       string
 	worker          int
 	domainFilter    []string
+	dryRun          bool
+	logLevel        string
 )
 
 var rootCmd = &cobra.Command{
@@ -35,10 +38,7 @@ var rootCmd = &cobra.Command{
 			panic("auth-token is required")
 		}
 
-		logger, errLogger := zap.NewProduction()
-		if errLogger != nil {
-			panic(errLogger)
-		}
+		logger := getLogger()
 		defer func(logger *zap.Logger) {
 			err := logger.Sync()
 			if err != nil {
@@ -53,7 +53,7 @@ var rootCmd = &cobra.Command{
 			Token:        authBearerToken,
 			ProjectId:    projectID,
 			DomainFilter: endpointDomainFilter,
-			DryRun:       false,
+			DryRun:       dryRun,
 			Workers:      worker,
 		}, logger.With(zap.String("component", "stackitprovider")), &http.Client{
 			Timeout: 10 * time.Second,
@@ -68,6 +68,38 @@ var rootCmd = &cobra.Command{
 			panic(err)
 		}
 	},
+}
+
+func getLogger() *zap.Logger {
+	cfg := zap.Config{
+		Level:    zap.NewAtomicLevelAt(getZapLogLevel()),
+		Encoding: "json", // or "console"
+		// ... other zap configuration as needed
+		OutputPaths:      []string{"stdout"},
+		ErrorOutputPaths: []string{"stderr"},
+	}
+
+	logger, errLogger := cfg.Build()
+	if errLogger != nil {
+		panic(errLogger)
+	}
+
+	return logger
+}
+
+func getZapLogLevel() zapcore.Level {
+	switch logLevel {
+	case "DEBUG":
+		return zapcore.DebugLevel
+	case "INFO":
+		return zapcore.InfoLevel
+	case "WARN":
+		return zapcore.WarnLevel
+	case "ERROR":
+		return zapcore.ErrorLevel
+	default:
+		return zapcore.InfoLevel
+	}
 }
 
 func Execute() error {
@@ -86,6 +118,8 @@ func init() {
 		"records, it can be parallelized. However, it is important to avoid setting this number "+
 		"excessively high to prevent receiving 429 rate limiting from the API.")
 	rootCmd.PersistentFlags().StringArrayVar(&domainFilter, "domain-filter", []string{}, "Establishes a filter for DNS zone names")
+	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Specifies whether to perform a dry run.")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "INFO", "Specifies the log level. Possible values are: DEBUG, INFO, WARN, ERROR")
 }
 
 func initConfig() {
