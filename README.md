@@ -1,9 +1,15 @@
 # STACKIT Webhook - ExternalDNS
 
 [![GoTemplate](https://img.shields.io/badge/go/template-black?logo=go)](https://github.com/golang-standards/project-layout)
-[![CI](https://github.com/stackitcloud/stackit-api-manager-cli/actions/workflows/main.yml/badge.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/actions/workflows/main.yml)
-[![Semgrep](https://github.com/stackitcloud/stackit-api-manager-cli/actions/workflows/semgrep.yml/badge.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/actions/workflows/semgrep.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/stackitcloud/stackit-api-manager-cli)](https://goreportcard.com/report/github.com/stackitcloud/external-dns-stackit-webhook)
+[![CI](https://github.com/stackitcloud/external-dns-stackit-webhook/actions/workflows/main.yml/badge.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/actions/workflows/main.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/stackitcloud/external-dns-stackit-webhook)](https://goreportcard.com/report/github.com/stackitcloud/external-dns-stackit-webhook)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release](https://img.shields.io/github/release/stackitcloud/external-dns-stackit-webhook.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/releases)
+[![Last Commit](https://img.shields.io/github/last-commit/stackitcloud/external-dns-stackit-webhook/main.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/commits/main)
+[![GitHub issues](https://img.shields.io/github/issues/stackitcloud/external-dns-stackit-webhook.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/stackitcloud/external-dns-stackit-webhook.svg)](https://github.com/stackitcloud/external-dns-stackit-webhook/pulls)
+[![GitHub stars](https://img.shields.io/github/stars/stackitcloud/external-dns-stackit-webhook.svg?style=social&label=Star&maxAge=2592000)](https://github.com/stackitcloud/external-dns-stackit-webhook/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/stackitcloud/external-dns-stackit-webhook.svg?style=social&label=Fork&maxAge=2592000)](https://github.com/stackitcloud/external-dns-stackit-webhook/network)
 
 ⚠️ CAUTION: This Webhook is designed on an unreleased edition of 
 [ExternalDNS](https://github.com/kubernetes-sigs/external-dns), specifically focusing on the novel integration 

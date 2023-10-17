@@ -1,7 +1,7 @@
 package api
 
 const (
-	mediaTypeFormat        = "application/external.dns.webhook+json;"
+	mediaTypeFormat        = "application/external.dns.webhook+json;version=1"
 	contentTypeHeader      = "Content-Type"
 	contentTypePlaintext   = "text/plain"
 	acceptHeader           = "Accept"
@@ -27,16 +27,4 @@ func (m mediaType) Is(headerValue string) bool {
 
 type Message struct {
 	Message string `json:"message"`
-}
-
-// PropertyValuesEqualsRequest holds params for property values equals request.
-type PropertyValuesEqualsRequest struct {
-	Name     string `json:"name"`
-	Previous string `json:"previous"`
-	Current  string `json:"current"`
-}
-
-// PropertiesValuesEqualsResponse holds params for property values equals response.
-type PropertiesValuesEqualsResponse struct {
-	Equals bool `json:"equals"`
 }

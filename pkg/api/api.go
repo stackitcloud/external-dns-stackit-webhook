@@ -62,7 +62,7 @@ func (a api) Listen(port string) error {
 	return err
 }
 
-//go:generate mockgen -destination=./mock/provider.go -source=./provider.go Provider
+//go:generate mockgen -destination=./mock/api.go -source=./api.go Provider
 type Provider interface {
 	provider.Provider
 }
@@ -89,8 +89,8 @@ func New(logger *zap.Logger, middlewareCollector metrics.HttpApiMetrics, provide
 	}
 
 	app.Get("/records", webhookRoutes.Records)
+	app.Get("/", webhookRoutes.GetDomainFilter)
 	app.Post("/records", webhookRoutes.ApplyChanges)
-	app.Post("/propertyvaluesequals", webhookRoutes.PropertyValuesEquals)
 	app.Post("/adjustendpoints", webhookRoutes.AdjustEndpoints)
 
 	return &api{
