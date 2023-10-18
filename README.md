@@ -227,7 +227,7 @@ Below are the options that are available.
 - `--domain-filter`/`DOMAIN_FILER` (optional): Establishes a filter for DNS zone names (default []).
 - `--dry-run`/`DRY_RUN` (optional): Specifies whether to perform a dry run (default false).
 - `--log-level`/`LOG_LEVEL` (optional): Defines the log level (default "info"). Possible values are: debug, info, warn,
-  error".
+  error.
 
 ## FAQ
 
