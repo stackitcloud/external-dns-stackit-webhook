@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"go.uber.org/zap/zapcore"
 	"log"
 	"net/http"
 	"strings"
@@ -15,6 +14,7 @@ import (
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
@@ -89,13 +89,13 @@ func getLogger() *zap.Logger {
 
 func getZapLogLevel() zapcore.Level {
 	switch logLevel {
-	case "DEBUG":
+	case "debug":
 		return zapcore.DebugLevel
-	case "INFO":
+	case "info":
 		return zapcore.InfoLevel
-	case "WARN":
+	case "warn":
 		return zapcore.WarnLevel
-	case "ERROR":
+	case "error":
 		return zapcore.ErrorLevel
 	default:
 		return zapcore.InfoLevel
@@ -119,7 +119,7 @@ func init() {
 		"excessively high to prevent receiving 429 rate limiting from the API.")
 	rootCmd.PersistentFlags().StringArrayVar(&domainFilter, "domain-filter", []string{}, "Establishes a filter for DNS zone names")
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Specifies whether to perform a dry run.")
-	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "INFO", "Specifies the log level. Possible values are: DEBUG, INFO, WARN, ERROR")
+	rootCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "Specifies the log level. Possible values are: debug, info, warn, error")
 }
 
 func initConfig() {
