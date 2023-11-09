@@ -136,7 +136,7 @@ spec:
             readOnlyRootFilesystem: true
             runAsNonRoot: true
             runAsUser: 65534
-          image: registry.k8s.io/external-dns/external-dns:v0.13.5 # insert the image with the webhook implementation here. 0.13.5 does not provide it yet.
+          image: registry.k8s.io/external-dns/external-dns:v0.14.0
           imagePullPolicy: IfNotPresent
           args:
             - --log-level=info
