@@ -3,7 +3,7 @@ package stackitprovider
 import (
 	"context"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-dns-api-client-go"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"
 )
@@ -24,7 +24,7 @@ func (d *StackitDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint,
 	}
 
 	for _, zone := range zones {
-		zoneIdsChannel <- zone.Id
+		zoneIdsChannel <- *zone.Id
 	}
 
 	for i := 0; i < len(zones); i++ {
@@ -81,19 +81,19 @@ func (d *StackitDNSProvider) processZoneRRSets(
 
 // collectEndPoints creates a list of Endpoints from the provided rrSets.
 func (d *StackitDNSProvider) collectEndPoints(
-	rrSets []stackitdnsclient.DomainRrSet,
+	rrSets []stackitdnsclient.RecordSet,
 ) []*endpoint.Endpoint {
 	var endpoints []*endpoint.Endpoint
 	for _, r := range rrSets {
-		if provider.SupportedRecordType(r.Type_) {
-			for _, _r := range r.Records {
+		if provider.SupportedRecordType(*r.Type) {
+			for _, _r := range *r.Records {
 				endpoints = append(
 					endpoints,
 					endpoint.NewEndpointWithTTL(
-						r.Name,
-						r.Type_,
-						endpoint.TTL(r.Ttl),
-						_r.Content,
+						*r.Name,
+						*r.Type,
+						endpoint.TTL(*r.Ttl),
+						*_r.Content,
 					),
 				)
 			}
