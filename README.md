@@ -205,7 +205,7 @@ spec:
             successThreshold: 1
             timeoutSeconds: 5
           env:
-            - name: STACKIT_SERVICE_ACCOUNT_TOKEN
+            - name: AUTH_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: external-dns-stackit-webhook
@@ -219,6 +219,8 @@ The configuration of the STACKIT webhook can be accomplished through command lin
 Below are the options that are available.
 
 - `--project-id`/`PROJECT_ID` (required): Specifies the project id of the STACKIT project.
+- `--auth-token`/`AUTH_TOKEN` (required if `auth-key-path` is not set): Defines the authentication token for the STACKIT API. Mutually exclusive with 'auth-key-path'.
+- `--auth-key-path`/`AUTH_KEY_PATH` (required if `auth-token` is not set): Defines the file path of the service account key for the STACKIT API. Mutually exclusive with 'auth-token'.
 - `--worker`/`WORKER`  (optional): Specifies the number of workers to employ for querying the API. Given that we
   need to iterate over all zones and records, it can be parallelized. However, it is important to avoid
   setting this number excessively high to prevent receiving 429 rate limiting from the API (default 10).
@@ -229,14 +231,6 @@ Below are the options that are available.
 - `--dry-run`/`DRY_RUN` (optional): Specifies whether to perform a dry run (default false).
 - `--log-level`/`LOG_LEVEL` (optional): Defines the log level (default "info"). Possible values are: debug, info, warn,
   error.
-
-## Authentication
-
-The STACKIT webhook uses the [STACKIT Go SDK](https://github.com/stackitcloud/stackit-sdk-go) and therefore inherits its
-options for authentication: You can use either Token or Key authentication flows. The example above uses the Token flow
-for authentication by providing the `STACKIT_SERVICE_ACCOUNT_TOKEN` environment variable in the `Deployment`. For more
-information on how to provide e.g. a Service Account Key to be used by the SDK, see
-[authentication options for the STACKIT Go SDK](https://github.com/stackitcloud/stackit-sdk-go?tab=readme-ov-file#authentication). 
 
 ## FAQ
 
