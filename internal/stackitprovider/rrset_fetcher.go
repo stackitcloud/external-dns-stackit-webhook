@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/antihax/optional"
-	stackitdnsclient "github.com/stackitcloud/stackit-dns-api-client-go"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 )
@@ -31,47 +30,38 @@ func newRRSetFetcher(
 	}
 }
 
-// fetchRecords fetches all []stackitdnsclient.DomainRrSet from STACKIT DNS API for given zone id.
+// fetchRecords fetches all []stackitdnsclient.RecordSet from STACKIT DNS API for given zone id.
 func (r *rrSetFetcher) fetchRecords(
 	ctx context.Context,
 	zoneId string,
 	nameFilter *string,
-) ([]stackitdnsclient.DomainRrSet, error) {
-	var result []stackitdnsclient.DomainRrSet
-	queryParams := stackitdnsclient.RecordSetApiV1ProjectsProjectIdZonesZoneIdRrsetsGetOpts{
-		Page:     optional.NewInt32(1),
-		PageSize: optional.NewInt32(10000),
-		ActiveEq: optional.NewBool(true),
-	}
+) ([]stackitdnsclient.RecordSet, error) {
+	var result []stackitdnsclient.RecordSet
+	var pager int32 = 1
+
+	listRequest := r.apiClient.ListRecordSets(ctx, r.projectId, zoneId).Page(pager).PageSize(10000).ActiveEq(true)
 
 	if nameFilter != nil {
-		queryParams.NameLike = optional.NewString(*nameFilter)
+		listRequest = listRequest.NameLike(*nameFilter)
 	}
 
-	rrSetResponse, _, err := r.apiClient.RecordSetApi.V1ProjectsProjectIdZonesZoneIdRrsetsGet(
-		ctx,
-		r.projectId,
-		zoneId,
-		&queryParams,
-	)
+	rrSetResponse, err := listRequest.Execute()
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, rrSetResponse.RrSets...)
 
-	queryParams.Page = optional.NewInt32(2)
-	for queryParams.Page.Value() <= rrSetResponse.TotalPages {
-		rrSetResponse, _, err := r.apiClient.RecordSetApi.V1ProjectsProjectIdZonesZoneIdRrsetsGet(
-			ctx,
-			r.projectId,
-			zoneId,
-			&queryParams,
-		)
+	result = append(result, *rrSetResponse.RrSets...)
+
+	// if there is more than one page, we need to loop over the other pages and
+	// issue another API request for each one of them
+	pager++
+	for int64(pager) <= *rrSetResponse.TotalPages {
+		rrSetResponse, err := listRequest.Page(pager).Execute()
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, rrSetResponse.RrSets...)
-		queryParams.Page = optional.NewInt32(queryParams.Page.Value() + 1)
+		result = append(result, *rrSetResponse.RrSets...)
+		pager++
 	}
 
 	return result, nil
@@ -81,8 +71,8 @@ func (r *rrSetFetcher) fetchRecords(
 func (r *rrSetFetcher) getRRSetForUpdateDeletion(
 	ctx context.Context,
 	change *endpoint.Endpoint,
-	zones []stackitdnsclient.DomainZone,
-) (*stackitdnsclient.DomainZone, *stackitdnsclient.DomainRrSet, error) {
+	zones []stackitdnsclient.Zone,
+) (*stackitdnsclient.Zone, *stackitdnsclient.RecordSet, error) {
 	resultZone, found := findBestMatchingZone(change.DNSName, zones)
 	if !found {
 		r.logger.Error(
@@ -93,12 +83,12 @@ func (r *rrSetFetcher) getRRSetForUpdateDeletion(
 		return nil, nil, fmt.Errorf("record set name contains no zone dns name")
 	}
 
-	domainRrSets, err := r.fetchRecords(ctx, resultZone.Id, &change.DNSName)
+	domainRRSets, err := r.fetchRecords(ctx, *resultZone.Id, &change.DNSName)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	resultRRSet, found := findRRSet(change.DNSName, change.RecordType, domainRrSets)
+	resultRRSet, found := findRRSet(change.DNSName, change.RecordType, domainRRSets)
 	if !found {
 		r.logger.Info("record not found on record sets", zap.String("name", change.DNSName))
 

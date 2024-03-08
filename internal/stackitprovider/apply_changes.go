@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-dns-api-client-go"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
@@ -55,14 +55,14 @@ func (d *StackitDNSProvider) createRRSets(
 func (d *StackitDNSProvider) createRRSet(
 	ctx context.Context,
 	change *endpoint.Endpoint,
-	zones []stackitdnsclient.DomainZone,
+	zones []stackitdnsclient.Zone,
 ) error {
 	resultZone, found := findBestMatchingZone(change.DNSName, zones)
 	if !found {
 		return fmt.Errorf("no matching zone found for %s", change.DNSName)
 	}
 
-	logFields := getLogFields(change, CREATE, resultZone.Id)
+	logFields := getLogFields(change, CREATE, *resultZone.Id)
 	d.logger.Info("create record set", logFields...)
 
 	if d.dryRun {
@@ -73,18 +73,12 @@ func (d *StackitDNSProvider) createRRSet(
 
 	modifyChange(change)
 
-	rrSet := getStackitRRSetRecordPost(change)
+	rrSetPayload := getStackitRecordSetPayload(change)
 
 	// ignore all errors to just retry on next run
-	_, _, err := d.apiClient.RecordSetApi.V1ProjectsProjectIdZonesZoneIdRrsetsPost(
-		ctx,
-		rrSet,
-		d.projectId,
-		resultZone.Id,
-	)
+	_, err := d.apiClient.CreateRecordSet(ctx, d.projectId, *resultZone.Id).CreateRecordSetPayload(rrSetPayload).Execute()
 	if err != nil {
-		message := getSwaggerErrorMessage(err)
-		d.logger.Error("error creating record set", zap.String("err", message))
+		d.logger.Error("error creating record set", zap.Error(err))
 
 		return err
 	}
@@ -116,7 +110,7 @@ func (d *StackitDNSProvider) updateRRSets(
 func (d *StackitDNSProvider) updateRRSet(
 	ctx context.Context,
 	change *endpoint.Endpoint,
-	zones []stackitdnsclient.DomainZone,
+	zones []stackitdnsclient.Zone,
 ) error {
 	modifyChange(change)
 
@@ -125,7 +119,7 @@ func (d *StackitDNSProvider) updateRRSet(
 		return err
 	}
 
-	logFields := getLogFields(change, UPDATE, resultRRSet.Id)
+	logFields := getLogFields(change, UPDATE, *resultRRSet.Id)
 	d.logger.Info("update record set", logFields...)
 
 	if d.dryRun {
@@ -134,18 +128,11 @@ func (d *StackitDNSProvider) updateRRSet(
 		return nil
 	}
 
-	rrSet := getStackitRRSetRecordPatch(change)
+	rrSet := getStackitPartialUpdateRecordSetPayload(change)
 
-	_, _, err = d.apiClient.RecordSetApi.V1ProjectsProjectIdZonesZoneIdRrsetsRrSetIdPatch(
-		ctx,
-		rrSet,
-		d.projectId,
-		resultZone.Id,
-		resultRRSet.Id,
-	)
+	_, err = d.apiClient.PartialUpdateRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).PartialUpdateRecordSetPayload(rrSet).Execute()
 	if err != nil {
-		message := getSwaggerErrorMessage(err)
-		d.logger.Error("error updating record set", zap.String("err", message))
+		d.logger.Error("error updating record set", zap.Error(err))
 
 		return err
 	}
@@ -155,7 +142,7 @@ func (d *StackitDNSProvider) updateRRSet(
 	return nil
 }
 
-// deleteRRSets delete record sets in the stackitprovider for the given endpoints that are in the
+// deleteRRSets deletes record sets in the stackitprovider for the given endpoints that are in the
 // deletion field.
 func (d *StackitDNSProvider) deleteRRSets(
 	ctx context.Context,
@@ -181,7 +168,7 @@ func (d *StackitDNSProvider) deleteRRSets(
 func (d *StackitDNSProvider) deleteRRSet(
 	ctx context.Context,
 	change *endpoint.Endpoint,
-	zones []stackitdnsclient.DomainZone,
+	zones []stackitdnsclient.Zone,
 ) error {
 	modifyChange(change)
 
@@ -190,7 +177,7 @@ func (d *StackitDNSProvider) deleteRRSet(
 		return err
 	}
 
-	logFields := getLogFields(change, DELETE, resultRRSet.Id)
+	logFields := getLogFields(change, DELETE, *resultRRSet.Id)
 	d.logger.Info("delete record set", logFields...)
 
 	if d.dryRun {
@@ -199,15 +186,9 @@ func (d *StackitDNSProvider) deleteRRSet(
 		return nil
 	}
 
-	_, _, err = d.apiClient.RecordSetApi.V1ProjectsProjectIdZonesZoneIdRrsetsRrSetIdDelete(
-		ctx,
-		d.projectId,
-		resultZone.Id,
-		resultRRSet.Id,
-	)
+	_, err = d.apiClient.DeleteRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).Execute()
 	if err != nil {
-		message := getSwaggerErrorMessage(err)
-		d.logger.Error("error deleting record set", zap.String("err", message))
+		d.logger.Error("error deleting record set", zap.Error(err))
 
 		return err
 	}
@@ -221,7 +202,7 @@ func (d *StackitDNSProvider) deleteRRSet(
 func (d *StackitDNSProvider) handleRRSetWithWorkers(
 	ctx context.Context,
 	endpoints []*endpoint.Endpoint,
-	zones []stackitdnsclient.DomainZone,
+	zones []stackitdnsclient.Zone,
 	action string,
 ) error {
 	workerChannel := make(chan changeTask, len(endpoints))
@@ -257,7 +238,7 @@ func (d *StackitDNSProvider) changeWorker(
 	ctx context.Context,
 	changes chan changeTask,
 	errorChannel chan error,
-	zones []stackitdnsclient.DomainZone,
+	zones []stackitdnsclient.Zone,
 ) {
 	for change := range changes {
 		switch change.action {

@@ -1,10 +1,8 @@
 package stackitprovider
 
 import (
-	"fmt"
-	"net/http"
-
-	stackitdnsclient "github.com/stackitcloud/stackit-dns-api-client-go"
+	stackitconfig "github.com/stackitcloud/stackit-sdk-go/core/config"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"
@@ -25,26 +23,24 @@ type StackitDNSProvider struct {
 
 // NewStackitDNSProvider creates a new STACKIT DNS stackitprovider.
 func NewStackitDNSProvider(
-	config Config,
 	logger *zap.Logger,
-	httpClient *http.Client,
+	providerConfig Config,
+	stackitConfig ...stackitconfig.ConfigurationOption,
 ) (*StackitDNSProvider, error) {
-	configClient := stackitdnsclient.NewConfiguration()
-
-	configClient.DefaultHeader["Authorization"] = fmt.Sprintf("Bearer %s", config.Token)
-	configClient.BasePath = config.BasePath
-	configClient.HTTPClient = httpClient
-	apiClient := stackitdnsclient.NewAPIClient(configClient)
+	apiClient, err := stackitdnsclient.NewAPIClient(stackitConfig...)
+	if err != nil {
+		return nil, err
+	}
 
 	provider := &StackitDNSProvider{
 		apiClient:          apiClient,
-		domainFilter:       config.DomainFilter,
-		dryRun:             config.DryRun,
-		projectId:          config.ProjectId,
-		workers:            config.Workers,
+		domainFilter:       providerConfig.DomainFilter,
+		dryRun:             providerConfig.DryRun,
+		projectId:          providerConfig.ProjectId,
+		workers:            providerConfig.Workers,
 		logger:             logger,
-		zoneFetcherClient:  newZoneFetcher(apiClient, config.DomainFilter, config.ProjectId),
-		rrSetFetcherClient: newRRSetFetcher(apiClient, config.DomainFilter, config.ProjectId, logger),
+		zoneFetcherClient:  newZoneFetcher(apiClient, providerConfig.DomainFilter, providerConfig.ProjectId),
+		rrSetFetcherClient: newRRSetFetcher(apiClient, providerConfig.DomainFilter, providerConfig.ProjectId, logger),
 	}
 
 	return provider, nil

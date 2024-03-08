@@ -3,9 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -13,6 +11,7 @@ import (
 	"github.com/stackitcloud/external-dns-stackit-webhook/internal/stackitprovider"
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
+	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/stackit"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"sigs.k8s.io/external-dns/endpoint"
@@ -21,6 +20,7 @@ import (
 var (
 	apiPort         string
 	authBearerToken string
+	authKeyPath     string
 	baseUrl         string
 	projectID       string
 	worker          int
@@ -34,10 +34,6 @@ var rootCmd = &cobra.Command{
 	Short: "provider webhook for the STACKIT DNS service",
 	Long:  "provider webhook for the STACKIT DNS service",
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(authBearerToken) == 0 {
-			panic("auth-token is required")
-		}
-
 		logger := getLogger()
 		defer func(logger *zap.Logger) {
 			err := logger.Sync()
@@ -48,16 +44,23 @@ var rootCmd = &cobra.Command{
 
 		endpointDomainFilter := endpoint.DomainFilter{Filters: domainFilter}
 
-		stackitProvider, err := stackitprovider.NewStackitDNSProvider(stackitprovider.Config{
-			BasePath:     baseUrl,
-			Token:        authBearerToken,
-			ProjectId:    projectID,
-			DomainFilter: endpointDomainFilter,
-			DryRun:       dryRun,
-			Workers:      worker,
-		}, logger.With(zap.String("component", "stackitprovider")), &http.Client{
-			Timeout: 10 * time.Second,
-		})
+		stackitConfigOptions, err := stackit.SetConfigOptions(baseUrl, authBearerToken, authKeyPath)
+		if err != nil {
+			panic(err)
+		}
+
+		stackitProvider, err := stackitprovider.NewStackitDNSProvider(
+			logger.With(zap.String("component", "stackitprovider")),
+			// ExternalDNS provider config
+			stackitprovider.Config{
+				ProjectId:    projectID,
+				DomainFilter: endpointDomainFilter,
+				DryRun:       dryRun,
+				Workers:      worker,
+			},
+			// STACKIT client SDK config
+			stackitConfigOptions...,
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -110,7 +113,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&apiPort, "api-port", "8888", "Specifies the port to listen on.")
-	rootCmd.PersistentFlags().StringVar(&authBearerToken, "auth-token", "", "Defines the authentication token for the STACKIT API.")
+	rootCmd.PersistentFlags().StringVar(&authBearerToken, "auth-token", "", "Defines the authentication token for the STACKIT API. Mutually exclusive with 'auth-key-path'.")
+	rootCmd.PersistentFlags().StringVar(&authKeyPath, "auth-key-path", "", "Defines the file path of the service account key for the STACKIT API. Mutually exclusive with 'auth-token'.")
 	rootCmd.PersistentFlags().StringVar(&baseUrl, "base-url", "https://dns.api.stackit.cloud", " Identifies the Base URL for utilizing the API.")
 	rootCmd.PersistentFlags().StringVar(&projectID, "project-id", "", "Specifies the project id of the STACKIT project.")
 	rootCmd.PersistentFlags().IntVar(&worker, "worker", 10, "Specifies the number "+

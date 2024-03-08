@@ -3,8 +3,7 @@ package stackitprovider
 import (
 	"context"
 
-	"github.com/antihax/optional"
-	stackitdnsclient "github.com/stackitcloud/stackit-dns-api-client-go"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
@@ -26,14 +25,12 @@ func newZoneFetcher(
 	}
 }
 
-// zones returns filtered list of stackitdnsclient.DomainZone if filter is set.
-func (z *zoneFetcher) zones(ctx context.Context) ([]stackitdnsclient.DomainZone, error) {
+// zones returns filtered list of stackitdnsclient.Zone if filter is set.
+func (z *zoneFetcher) zones(ctx context.Context) ([]stackitdnsclient.Zone, error) {
 	if len(z.domainFilter.Filters) == 0 {
 		// no filters, return all zones
-		queryParams := stackitdnsclient.ZoneApiV1ProjectsProjectIdZonesGetOpts{
-			ActiveEq: optional.NewBool(true),
-		}
-		zones, err := z.fetchZones(ctx, queryParams)
+		listRequest := z.apiClient.ListZones(ctx, z.projectId).ActiveEq(true)
+		zones, err := z.fetchZones(listRequest)
 		if err != nil {
 			return nil, err
 		}
@@ -41,14 +38,11 @@ func (z *zoneFetcher) zones(ctx context.Context) ([]stackitdnsclient.DomainZone,
 		return zones, nil
 	}
 
-	var result []stackitdnsclient.DomainZone
+	var result []stackitdnsclient.Zone
 	// send one request per filter
 	for _, filter := range z.domainFilter.Filters {
-		queryParams := stackitdnsclient.ZoneApiV1ProjectsProjectIdZonesGetOpts{
-			DnsNameLike: optional.NewString(filter),
-			ActiveEq:    optional.NewBool(true),
-		}
-		zones, err := z.fetchZones(ctx, queryParams)
+		listRequest := z.apiClient.ListZones(ctx, z.projectId).ActiveEq(true).DnsNameLike(filter)
+		zones, err := z.fetchZones(listRequest)
 		if err != nil {
 			return nil, err
 		}
@@ -58,38 +52,32 @@ func (z *zoneFetcher) zones(ctx context.Context) ([]stackitdnsclient.DomainZone,
 	return result, nil
 }
 
-// fetchZones fetches all []stackitdnsclient.DomainZone from STACKIT DNS API.
+// fetchZones fetches all []stackitdnsclient.Zone from STACKIT DNS API.
 func (z *zoneFetcher) fetchZones(
-	ctx context.Context,
-	queryParams stackitdnsclient.ZoneApiV1ProjectsProjectIdZonesGetOpts,
-) ([]stackitdnsclient.DomainZone, error) {
-	var result []stackitdnsclient.DomainZone
-	queryParams.Page = optional.NewInt32(1)
-	queryParams.PageSize = optional.NewInt32(10000)
+	listRequest stackitdnsclient.ApiListZonesRequest,
+) ([]stackitdnsclient.Zone, error) {
+	var result []stackitdnsclient.Zone
+	var pager int32 = 1
 
-	zoneResponse, _, err := z.apiClient.ZoneApi.V1ProjectsProjectIdZonesGet(
-		ctx,
-		z.projectId,
-		&queryParams,
-	)
+	listRequest = listRequest.Page(1).PageSize(10000)
+
+	zoneResponse, err := listRequest.Execute()
 	if err != nil {
 		return nil, err
 	}
-	result = append(result, zoneResponse.Zones...)
 
-	page := int32(2)
-	for page <= zoneResponse.TotalPages {
-		queryParams.Page = optional.NewInt32(page)
-		zoneResponse, _, err := z.apiClient.ZoneApi.V1ProjectsProjectIdZonesGet(
-			ctx,
-			z.projectId,
-			&queryParams,
-		)
+	result = append(result, *zoneResponse.Zones...)
+
+	// if there is more than one page, we need to loop over the other pages and
+	// issue another API request for each one of them
+	pager++
+	for int64(pager) <= *zoneResponse.TotalPages {
+		zoneResponse, err := listRequest.Page(pager).Execute()
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, zoneResponse.Zones...)
-		page++
+		result = append(result, *zoneResponse.Zones...)
+		pager++
 	}
 
 	return result, nil
