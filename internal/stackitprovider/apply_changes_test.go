@@ -3,6 +3,7 @@ package stackitprovider
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -141,6 +142,61 @@ func TestNoRRSetFound(t *testing.T) {
 
 	err = stackitDnsProvider.ApplyChanges(ctx, changes)
 	assert.Error(t, err)
+}
+
+func TestPartialUpdate(t *testing.T) {
+	t.Parallel()
+
+	ctx := context.Background()
+	validZoneResponse := getValidResponseZoneAllBytes(t)
+
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	// Set up common endpoint for all types of changes
+	setUpCommonEndpoints(mux, validZoneResponse, http.StatusOK)
+	// Set up change type-specific endpoints
+	// based on setUpChangeTypeEndpoints(t, mux, validRRSetResponse, http.StatusOK, Update)
+	// but extended to check that the rrset is updated
+	rrSetUpdated := false
+	mux.HandleFunc(
+		"/v1/projects/1234/zones/1234/rrsets/1234",
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			fmt.Println(r.Method)
+			if r.Method == http.MethodPatch {
+				rrSetUpdated = true
+			}
+		},
+	)
+	mux.HandleFunc(
+		"/v1/projects/1234/zones/1234/rrsets",
+		func(w http.ResponseWriter, r *http.Request) {
+			getRrsetsResponseRecordsNonPaged(t, w, "1234")
+		},
+	)
+	mux.HandleFunc(
+		"/v1/projects/1234/zones/5678/rrsets",
+		func(w http.ResponseWriter, r *http.Request) {
+			getRrsetsResponseRecordsNonPaged(t, w, "5678")
+		},
+	)
+
+	stackitDnsProvider, err := getDefaultTestProvider(server)
+	assert.NoError(t, err)
+
+	// Create update change
+	changes := getChangeTypeChanges(Update)
+	// Add task to create invalid endpoint
+	changes.Create = []*endpoint.Endpoint{
+		{DNSName: "notfound.com", Targets: endpoint.Targets{"test.notfound.com"}},
+	}
+
+	err = stackitDnsProvider.ApplyChanges(ctx, changes)
+	assert.Error(t, err)
+	assert.True(t, rrSetUpdated, "rrset was not updated")
 }
 
 // setUpCommonEndpoints for all change types.
