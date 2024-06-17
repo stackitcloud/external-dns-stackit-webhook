@@ -12,20 +12,25 @@ import (
 
 // ApplyChanges applies a given set of changes in a given zone.
 func (d *StackitDNSProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
+	zones, err := d.zoneFetcherClient.zones(ctx)
+	if err != nil {
+		return err
+	}
+
 	// create rr set. POST /v1/projects/{projectId}/zones/{zoneId}/rrsets
-	err := d.createRRSets(ctx, changes.Create)
+	err = d.createRRSets(ctx, zones, changes.Create)
 	if err != nil {
 		return err
 	}
 
 	// update rr set. PATCH /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
-	err = d.updateRRSets(ctx, changes.UpdateNew)
+	err = d.updateRRSets(ctx, zones, changes.UpdateNew)
 	if err != nil {
 		return err
 	}
 
 	// delete rr set. DELETE /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
-	err = d.deleteRRSets(ctx, changes.Delete)
+	err = d.deleteRRSets(ctx, zones, changes.Delete)
 	if err != nil {
 		return err
 	}
@@ -37,15 +42,11 @@ func (d *StackitDNSProvider) ApplyChanges(ctx context.Context, changes *plan.Cha
 // creation field.
 func (d *StackitDNSProvider) createRRSets(
 	ctx context.Context,
+	zones []stackitdnsclient.Zone,
 	endpoints []*endpoint.Endpoint,
 ) error {
 	if len(endpoints) == 0 {
 		return nil
-	}
-
-	zones, err := d.zoneFetcherClient.zones(ctx)
-	if err != nil {
-		return err
 	}
 
 	return d.handleRRSetWithWorkers(ctx, endpoints, zones, CREATE)
@@ -55,15 +56,11 @@ func (d *StackitDNSProvider) createRRSets(
 // endpoints that are in the update new field.
 func (d *StackitDNSProvider) updateRRSets(
 	ctx context.Context,
+	zones []stackitdnsclient.Zone,
 	endpoints []*endpoint.Endpoint,
 ) error {
 	if len(endpoints) == 0 {
 		return nil
-	}
-
-	zones, err := d.zoneFetcherClient.zones(ctx)
-	if err != nil {
-		return err
 	}
 
 	return d.handleRRSetWithWorkers(ctx, endpoints, zones, UPDATE)
@@ -73,6 +70,7 @@ func (d *StackitDNSProvider) updateRRSets(
 // deletion field.
 func (d *StackitDNSProvider) deleteRRSets(
 	ctx context.Context,
+	zones []stackitdnsclient.Zone,
 	endpoints []*endpoint.Endpoint,
 ) error {
 	if len(endpoints) == 0 {
@@ -82,11 +80,6 @@ func (d *StackitDNSProvider) deleteRRSets(
 	}
 
 	d.logger.Info("records to delete", zap.String("records", fmt.Sprintf("%v", endpoints)))
-
-	zones, err := d.zoneFetcherClient.zones(ctx)
-	if err != nil {
-		return err
-	}
 
 	return d.handleRRSetWithWorkers(ctx, endpoints, zones, DELETE)
 }
