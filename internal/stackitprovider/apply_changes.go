@@ -51,43 +51,6 @@ func (d *StackitDNSProvider) createRRSets(
 	return d.handleRRSetWithWorkers(ctx, endpoints, zones, CREATE)
 }
 
-// createRRSet creates a new record set in the stackitprovider for the given endpoint.
-func (d *StackitDNSProvider) createRRSet(
-	ctx context.Context,
-	change *endpoint.Endpoint,
-	zones []stackitdnsclient.Zone,
-) error {
-	resultZone, found := findBestMatchingZone(change.DNSName, zones)
-	if !found {
-		return fmt.Errorf("no matching zone found for %s", change.DNSName)
-	}
-
-	logFields := getLogFields(change, CREATE, *resultZone.Id)
-	d.logger.Info("create record set", logFields...)
-
-	if d.dryRun {
-		d.logger.Debug("dry run, skipping", logFields...)
-
-		return nil
-	}
-
-	modifyChange(change)
-
-	rrSetPayload := getStackitRecordSetPayload(change)
-
-	// ignore all errors to just retry on next run
-	_, err := d.apiClient.CreateRecordSet(ctx, d.projectId, *resultZone.Id).CreateRecordSetPayload(rrSetPayload).Execute()
-	if err != nil {
-		d.logger.Error("error creating record set", zap.Error(err))
-
-		return err
-	}
-
-	d.logger.Info("create record set successfully", logFields...)
-
-	return nil
-}
-
 // updateRRSets patches (overrides) contents in the record sets in the stackitprovider for the given
 // endpoints that are in the update new field.
 func (d *StackitDNSProvider) updateRRSets(
@@ -104,42 +67,6 @@ func (d *StackitDNSProvider) updateRRSets(
 	}
 
 	return d.handleRRSetWithWorkers(ctx, endpoints, zones, UPDATE)
-}
-
-// updateRRSet patches (overrides) contents in the record set in the stackitprovider.
-func (d *StackitDNSProvider) updateRRSet(
-	ctx context.Context,
-	change *endpoint.Endpoint,
-	zones []stackitdnsclient.Zone,
-) error {
-	modifyChange(change)
-
-	resultZone, resultRRSet, err := d.rrSetFetcherClient.getRRSetForUpdateDeletion(ctx, change, zones)
-	if err != nil {
-		return err
-	}
-
-	logFields := getLogFields(change, UPDATE, *resultRRSet.Id)
-	d.logger.Info("update record set", logFields...)
-
-	if d.dryRun {
-		d.logger.Debug("dry run, skipping", logFields...)
-
-		return nil
-	}
-
-	rrSet := getStackitPartialUpdateRecordSetPayload(change)
-
-	_, err = d.apiClient.PartialUpdateRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).PartialUpdateRecordSetPayload(rrSet).Execute()
-	if err != nil {
-		d.logger.Error("error updating record set", zap.Error(err))
-
-		return err
-	}
-
-	d.logger.Info("update record set successfully", logFields...)
-
-	return nil
 }
 
 // deleteRRSets deletes record sets in the stackitprovider for the given endpoints that are in the
@@ -162,40 +89,6 @@ func (d *StackitDNSProvider) deleteRRSets(
 	}
 
 	return d.handleRRSetWithWorkers(ctx, endpoints, zones, DELETE)
-}
-
-// deleteRRSet deletes a record set in the stackitprovider for the given endpoint.
-func (d *StackitDNSProvider) deleteRRSet(
-	ctx context.Context,
-	change *endpoint.Endpoint,
-	zones []stackitdnsclient.Zone,
-) error {
-	modifyChange(change)
-
-	resultZone, resultRRSet, err := d.rrSetFetcherClient.getRRSetForUpdateDeletion(ctx, change, zones)
-	if err != nil {
-		return err
-	}
-
-	logFields := getLogFields(change, DELETE, *resultRRSet.Id)
-	d.logger.Info("delete record set", logFields...)
-
-	if d.dryRun {
-		d.logger.Debug("dry run, skipping", logFields...)
-
-		return nil
-	}
-
-	_, err = d.apiClient.DeleteRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).Execute()
-	if err != nil {
-		d.logger.Error("error deleting record set", zap.Error(err))
-
-		return err
-	}
-
-	d.logger.Info("delete record set successfully", logFields...)
-
-	return nil
 }
 
 // handleRRSetWithWorkers handles the given endpoints with workers to optimize speed.
@@ -255,4 +148,111 @@ func (d *StackitDNSProvider) changeWorker(
 	}
 
 	d.logger.Debug("change worker finished")
+}
+
+// createRRSet creates a new record set in the stackitprovider for the given endpoint.
+func (d *StackitDNSProvider) createRRSet(
+	ctx context.Context,
+	change *endpoint.Endpoint,
+	zones []stackitdnsclient.Zone,
+) error {
+	resultZone, found := findBestMatchingZone(change.DNSName, zones)
+	if !found {
+		return fmt.Errorf("no matching zone found for %s", change.DNSName)
+	}
+
+	logFields := getLogFields(change, CREATE, *resultZone.Id)
+	d.logger.Info("create record set", logFields...)
+
+	if d.dryRun {
+		d.logger.Debug("dry run, skipping", logFields...)
+
+		return nil
+	}
+
+	modifyChange(change)
+
+	rrSetPayload := getStackitRecordSetPayload(change)
+
+	// ignore all errors to just retry on next run
+	_, err := d.apiClient.CreateRecordSet(ctx, d.projectId, *resultZone.Id).CreateRecordSetPayload(rrSetPayload).Execute()
+	if err != nil {
+		d.logger.Error("error creating record set", zap.Error(err))
+
+		return err
+	}
+
+	d.logger.Info("create record set successfully", logFields...)
+
+	return nil
+}
+
+// updateRRSet patches (overrides) contents in the record set in the stackitprovider.
+func (d *StackitDNSProvider) updateRRSet(
+	ctx context.Context,
+	change *endpoint.Endpoint,
+	zones []stackitdnsclient.Zone,
+) error {
+	modifyChange(change)
+
+	resultZone, resultRRSet, err := d.rrSetFetcherClient.getRRSetForUpdateDeletion(ctx, change, zones)
+	if err != nil {
+		return err
+	}
+
+	logFields := getLogFields(change, UPDATE, *resultRRSet.Id)
+	d.logger.Info("update record set", logFields...)
+
+	if d.dryRun {
+		d.logger.Debug("dry run, skipping", logFields...)
+
+		return nil
+	}
+
+	rrSet := getStackitPartialUpdateRecordSetPayload(change)
+
+	_, err = d.apiClient.PartialUpdateRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).PartialUpdateRecordSetPayload(rrSet).Execute()
+	if err != nil {
+		d.logger.Error("error updating record set", zap.Error(err))
+
+		return err
+	}
+
+	d.logger.Info("update record set successfully", logFields...)
+
+	return nil
+}
+
+// deleteRRSet deletes a record set in the stackitprovider for the given endpoint.
+func (d *StackitDNSProvider) deleteRRSet(
+	ctx context.Context,
+	change *endpoint.Endpoint,
+	zones []stackitdnsclient.Zone,
+) error {
+	modifyChange(change)
+
+	resultZone, resultRRSet, err := d.rrSetFetcherClient.getRRSetForUpdateDeletion(ctx, change, zones)
+	if err != nil {
+		return err
+	}
+
+	logFields := getLogFields(change, DELETE, *resultRRSet.Id)
+	d.logger.Info("delete record set", logFields...)
+
+	if d.dryRun {
+		d.logger.Debug("dry run, skipping", logFields...)
+
+		return nil
+	}
+
+	_, err = d.apiClient.DeleteRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).Execute()
+	if err != nil {
+		d.logger.Error("error deleting record set", zap.Error(err))
+
+		return err
+	}
+
+	d.logger.Info("delete record set successfully", logFields...)
+
+	return nil
 }
