@@ -3,6 +3,7 @@ package stackitprovider
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
 	"go.uber.org/zap"
@@ -53,25 +54,32 @@ func (d *StackitDNSProvider) handleRRSetWithWorkers(
 	zones []stackitdnsclient.Zone,
 ) error {
 	workerChannel := make(chan changeTask, len(tasks))
-	defer close(workerChannel)
 	errorChannel := make(chan error, len(tasks))
 
+	var wg sync.WaitGroup
 	for i := 0; i < d.workers; i++ {
-		go d.changeWorker(ctx, workerChannel, errorChannel, zones)
+		wg.Add(1)
+		go d.changeWorker(ctx, workerChannel, errorChannel, zones, &wg)
 	}
 
 	for _, task := range tasks {
 		workerChannel <- task
 	}
+	close(workerChannel)
 
+	// capture first error
+	var err error
 	for i := 0; i < len(tasks); i++ {
-		err := <-errorChannel
+		err = <-errorChannel
 		if err != nil {
-			return err
+			break
 		}
 	}
 
-	return nil
+	// wait until all workers have finished
+	wg.Wait()
+
+	return err
 }
 
 // changeWorker is a worker that handles changes passed by a channel.
@@ -80,7 +88,10 @@ func (d *StackitDNSProvider) changeWorker(
 	changes chan changeTask,
 	errorChannel chan error,
 	zones []stackitdnsclient.Zone,
+	wg *sync.WaitGroup,
 ) {
+	defer wg.Done()
+
 	for change := range changes {
 		var err error
 		switch change.action {
