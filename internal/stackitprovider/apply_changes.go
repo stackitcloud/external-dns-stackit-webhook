@@ -3,6 +3,7 @@ package stackitprovider
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
 	"go.uber.org/zap"
@@ -12,43 +13,99 @@ import (
 
 // ApplyChanges applies a given set of changes in a given zone.
 func (d *StackitDNSProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
+	var tasks []changeTask
 	// create rr set. POST /v1/projects/{projectId}/zones/{zoneId}/rrsets
-	err := d.createRRSets(ctx, changes.Create)
-	if err != nil {
-		return err
-	}
-
+	tasks = append(tasks, d.buildRRSetTasks(changes.Create, CREATE)...)
 	// update rr set. PATCH /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
-	err = d.updateRRSets(ctx, changes.UpdateNew)
-	if err != nil {
-		return err
-	}
-
+	tasks = append(tasks, d.buildRRSetTasks(changes.UpdateNew, UPDATE)...)
+	d.logger.Info("records to delete", zap.String("records", fmt.Sprintf("%v", changes.Delete)))
 	// delete rr set. DELETE /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
-	err = d.deleteRRSets(ctx, changes.Delete)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-// createRRSets creates new record sets in the stackitprovider for the given endpoints that are in the
-// creation field.
-func (d *StackitDNSProvider) createRRSets(
-	ctx context.Context,
-	endpoints []*endpoint.Endpoint,
-) error {
-	if len(endpoints) == 0 {
-		return nil
-	}
+	tasks = append(tasks, d.buildRRSetTasks(changes.Delete, DELETE)...)
 
 	zones, err := d.zoneFetcherClient.zones(ctx)
 	if err != nil {
 		return err
 	}
 
-	return d.handleRRSetWithWorkers(ctx, endpoints, zones, CREATE)
+	return d.handleRRSetWithWorkers(ctx, tasks, zones)
+}
+
+// handleRRSetWithWorkers handles the given endpoints with workers to optimize speed.
+func (d *StackitDNSProvider) buildRRSetTasks(
+	endpoints []*endpoint.Endpoint,
+	action string,
+) []changeTask {
+	tasks := make([]changeTask, 0, len(endpoints))
+
+	for _, change := range endpoints {
+		tasks = append(tasks, changeTask{
+			action: action,
+			change: change,
+		})
+	}
+
+	return tasks
+}
+
+// handleRRSetWithWorkers handles the given endpoints with workers to optimize speed.
+func (d *StackitDNSProvider) handleRRSetWithWorkers(
+	ctx context.Context,
+	tasks []changeTask,
+	zones []stackitdnsclient.Zone,
+) error {
+	workerChannel := make(chan changeTask, len(tasks))
+	errorChannel := make(chan error, len(tasks))
+
+	var wg sync.WaitGroup
+	for i := 0; i < d.workers; i++ {
+		wg.Add(1)
+		go d.changeWorker(ctx, workerChannel, errorChannel, zones, &wg)
+	}
+
+	for _, task := range tasks {
+		workerChannel <- task
+	}
+	close(workerChannel)
+
+	// capture first error
+	var err error
+	for i := 0; i < len(tasks); i++ {
+		err = <-errorChannel
+		if err != nil {
+			break
+		}
+	}
+
+	// wait until all workers have finished
+	wg.Wait()
+
+	return err
+}
+
+// changeWorker is a worker that handles changes passed by a channel.
+func (d *StackitDNSProvider) changeWorker(
+	ctx context.Context,
+	changes chan changeTask,
+	errorChannel chan error,
+	zones []stackitdnsclient.Zone,
+	wg *sync.WaitGroup,
+) {
+	defer wg.Done()
+
+	for change := range changes {
+		var err error
+		switch change.action {
+		case CREATE:
+			err = d.createRRSet(ctx, change.change, zones)
+		case UPDATE:
+			err = d.updateRRSet(ctx, change.change, zones)
+		case DELETE:
+			err = d.deleteRRSet(ctx, change.change, zones)
+		}
+		errorChannel <- err
+	}
+
+	d.logger.Debug("change worker finished")
 }
 
 // createRRSet creates a new record set in the stackitprovider for the given endpoint.
@@ -88,24 +145,6 @@ func (d *StackitDNSProvider) createRRSet(
 	return nil
 }
 
-// updateRRSets patches (overrides) contents in the record sets in the stackitprovider for the given
-// endpoints that are in the update new field.
-func (d *StackitDNSProvider) updateRRSets(
-	ctx context.Context,
-	endpoints []*endpoint.Endpoint,
-) error {
-	if len(endpoints) == 0 {
-		return nil
-	}
-
-	zones, err := d.zoneFetcherClient.zones(ctx)
-	if err != nil {
-		return err
-	}
-
-	return d.handleRRSetWithWorkers(ctx, endpoints, zones, UPDATE)
-}
-
 // updateRRSet patches (overrides) contents in the record set in the stackitprovider.
 func (d *StackitDNSProvider) updateRRSet(
 	ctx context.Context,
@@ -142,28 +181,6 @@ func (d *StackitDNSProvider) updateRRSet(
 	return nil
 }
 
-// deleteRRSets deletes record sets in the stackitprovider for the given endpoints that are in the
-// deletion field.
-func (d *StackitDNSProvider) deleteRRSets(
-	ctx context.Context,
-	endpoints []*endpoint.Endpoint,
-) error {
-	if len(endpoints) == 0 {
-		d.logger.Debug("no endpoints to delete")
-
-		return nil
-	}
-
-	d.logger.Info("records to delete", zap.String("records", fmt.Sprintf("%v", endpoints)))
-
-	zones, err := d.zoneFetcherClient.zones(ctx)
-	if err != nil {
-		return err
-	}
-
-	return d.handleRRSetWithWorkers(ctx, endpoints, zones, DELETE)
-}
-
 // deleteRRSet deletes a record set in the stackitprovider for the given endpoint.
 func (d *StackitDNSProvider) deleteRRSet(
 	ctx context.Context,
@@ -196,63 +213,4 @@ func (d *StackitDNSProvider) deleteRRSet(
 	d.logger.Info("delete record set successfully", logFields...)
 
 	return nil
-}
-
-// handleRRSetWithWorkers handles the given endpoints with workers to optimize speed.
-func (d *StackitDNSProvider) handleRRSetWithWorkers(
-	ctx context.Context,
-	endpoints []*endpoint.Endpoint,
-	zones []stackitdnsclient.Zone,
-	action string,
-) error {
-	workerChannel := make(chan changeTask, len(endpoints))
-	errorChannel := make(chan error, len(endpoints))
-
-	for i := 0; i < d.workers; i++ {
-		go d.changeWorker(ctx, workerChannel, errorChannel, zones)
-	}
-
-	for _, change := range endpoints {
-		workerChannel <- changeTask{
-			action: action,
-			change: change,
-		}
-	}
-
-	for i := 0; i < len(endpoints); i++ {
-		err := <-errorChannel
-		if err != nil {
-			close(workerChannel)
-
-			return err
-		}
-	}
-
-	close(workerChannel)
-
-	return nil
-}
-
-// changeWorker is a worker that handles changes passed by a channel.
-func (d *StackitDNSProvider) changeWorker(
-	ctx context.Context,
-	changes chan changeTask,
-	errorChannel chan error,
-	zones []stackitdnsclient.Zone,
-) {
-	for change := range changes {
-		switch change.action {
-		case CREATE:
-			err := d.createRRSet(ctx, change.change, zones)
-			errorChannel <- err
-		case UPDATE:
-			err := d.updateRRSet(ctx, change.change, zones)
-			errorChannel <- err
-		case DELETE:
-			err := d.deleteRRSet(ctx, change.change, zones)
-			errorChannel <- err
-		}
-	}
-
-	d.logger.Debug("change worker finished")
 }
