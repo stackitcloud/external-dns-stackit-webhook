@@ -26,7 +26,7 @@ func NewMetricsMiddleware(collector metrics_collector.HttpApiMetrics) fiber.Hand
 		}
 
 		method := strings.Clone(c.Method())
-		path := c.Path()
+		path := strings.Clone(c.Path())
 		status := c.Response().StatusCode()
 
 		collector.CollectRequest(method, path, status)

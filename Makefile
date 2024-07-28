@@ -54,7 +54,7 @@ out/report.json:
 	go test -race ./... -coverprofile=out/cover.out --json | tee "$(@)"
 
 run:
-	go run cmd/webhook
+	go run cmd/webhook/main.go
 
 .PHONY: clean
 clean:
