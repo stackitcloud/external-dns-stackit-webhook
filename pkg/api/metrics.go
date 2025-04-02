@@ -7,6 +7,7 @@ import (
 	"github.com/gofiber/adaptor/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	metrics_collector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
 )
 

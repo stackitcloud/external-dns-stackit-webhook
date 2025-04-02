@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
-	mock_provider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
+
+	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
+	mock_provider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
 )
 
 func TestApi(t *testing.T) {
