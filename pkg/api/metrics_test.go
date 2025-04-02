@@ -6,11 +6,12 @@ import (
 	"testing"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
+
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
 	metrics_collector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
 	mock_metrics_collector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics/mock"
-	"github.com/stretchr/testify/assert"
-	"go.uber.org/mock/gomock"
 )
 
 func TestMetricsMiddleware(t *testing.T) {

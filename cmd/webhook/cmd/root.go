@@ -8,13 +8,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+	"sigs.k8s.io/external-dns/endpoint"
+
 	"github.com/stackitcloud/external-dns-stackit-webhook/internal/stackitprovider"
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/stackit"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
-	"sigs.k8s.io/external-dns/endpoint"
 )
 
 var (

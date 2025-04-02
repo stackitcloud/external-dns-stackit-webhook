@@ -15,9 +15,10 @@ import (
 	fiberlogger "github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/pprof"
 	fiberrecover "github.com/gofiber/fiber/v2/middleware/recover"
-	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/provider"
+
+	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
 )
 
 type Api interface {

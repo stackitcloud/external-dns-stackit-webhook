@@ -7,12 +7,13 @@ import (
 	"testing"
 
 	"github.com/goccy/go-json"
-	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
-	mock_provider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
+
+	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
+	mock_provider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
 )
 
 func TestWebhook_Records(t *testing.T) {
