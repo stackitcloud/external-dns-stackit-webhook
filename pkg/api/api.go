@@ -73,6 +73,7 @@ func New(logger *zap.Logger, middlewareCollector metrics.HttpApiMetrics, provide
 		DisableStartupMessage: true,
 		JSONEncoder:           json.Marshal,
 		JSONDecoder:           json.Unmarshal,
+		BodyLimit:             12 * 1024 * 1024,
 	})
 
 	registerAt(app, "/metrics")
