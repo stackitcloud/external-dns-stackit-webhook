@@ -19,8 +19,8 @@ of your STACKIT domains within your Kubernetes cluster using
 [ExternalDNS](https://github.com/kubernetes-sigs/external-dns).
 
 For utilizing ExternalDNS with STACKIT, it is mandatory to establish a STACKIT project, a service account
-within the project, generate an authentication token for the service account, authorize the service account
-to create and read dns zones, and finally, establish a STACKIT zone.
+within the project, generate a service account key, authorize the service account with DNS Admin role,
+and finally establish a STACKIT zone.
 
 ## Kubernetes Deployment
 
@@ -32,9 +32,10 @@ demonstrates the deployment as a
 within the ExternalDNS pod.
 
 ```shell
-# We create a Secret from an auth token. Alternatively, you can also
-# use keys to authenticate the webhook - see "Authentication" below.
-kubectl create secret generic external-dns-stackit-webhook --from-literal=auth-token='<Your-Token>'
+# Create a Secret containing the STACKIT service-account key JSON (as a file).
+# This Secret will be mounted into the webhook container; AUTH_KEY_PATH will point to that mounted file.
+kubectl -n default create secret generic external-dns-stackit-webhook \
+  --from-file=sa.json=/path/to/stackit-service-account-key.json
 ```
 
 ```shell
@@ -129,6 +130,13 @@ spec:
       serviceAccountName: external-dns
       securityContext:
         fsGroup: 65534
+      volumes:
+        - name: stackit-sa-key
+          secret:
+            secretName: external-dns-stackit-webhook
+            items:
+              - key: sa.json
+                path: sa.json
       containers:
         - name: external-dns
           securityContext:
@@ -205,11 +213,12 @@ spec:
             successThreshold: 1
             timeoutSeconds: 5
           env:
-            - name: AUTH_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: external-dns-stackit-webhook
-                  key: auth-token
+            - name: AUTH_KEY_PATH
+              value: /var/run/secrets/stackit/sa.json
+          volumeMounts:
+            - name: stackit-sa-key
+              mountPath: /var/run/secrets/stackit
+              readOnly: true
 EOF
 ```
 
@@ -219,8 +228,9 @@ The configuration of the STACKIT webhook can be accomplished through command lin
 Below are the options that are available.
 
 - `--project-id`/`PROJECT_ID` (required): Specifies the project id of the STACKIT project.
-- `--auth-token`/`AUTH_TOKEN` (required if `auth-key-path` is not set): Defines the authentication token for the STACKIT API. Mutually exclusive with 'auth-key-path'.
-- `--auth-key-path`/`AUTH_KEY_PATH` (required if `auth-token` is not set): Defines the file path of the service account key for the STACKIT API. Mutually exclusive with 'auth-token'.
+- `--auth-key-path`/`AUTH_KEY_PATH` (required): Defines the file path of the service account key for the STACKIT API.
+  Prefer using a Kubernetes Secret mounted as a file and set `AUTH_KEY_PATH` to the in-container path
+  (e.g. `/var/run/secrets/stackit/sa.json`).
 - `--worker`/`WORKER`  (optional): Specifies the number of workers to employ for querying the API. Given that we
   need to iterate over all zones and records, it can be parallelized. However, it is important to avoid
   setting this number excessively high to prevent receiving 429 rate limiting from the API (default 10).
@@ -334,7 +344,7 @@ Run the app:
 ```bash
 export BASE_URL="https://dns.api.stackit.cloud"
 export PROJECT_ID="c158c736-0300-4044-95c4-b7d404279b35"
-export AUTH_TOKEN="your-auth-token"
+export AUTH_KEY_PATH="/absolute/path/to/stackit-service-account-key.json"
 
 make run
 ```
