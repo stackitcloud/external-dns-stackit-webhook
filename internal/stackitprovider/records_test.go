@@ -323,50 +323,27 @@ func getZonesResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter) {
 	w.Write(successResponseBytes)
 }
 
-func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domain string) {
+func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domain string, record string, id string) {
 	t.Helper()
 
 	w.Header().Set("Content-Type", "application/json")
 
-	var rrSets stackitdnsclient.ListRecordSetsResponse
-
-	switch domain {
-	case "1234":
-		rrSets = stackitdnsclient.ListRecordSetsResponse{
-			ItemsPerPage: pointerTo(int64(20)),
-			Message:      pointerTo("success"),
-			RrSets: &[]stackitdnsclient.RecordSet{
-				{
-					Name: pointerTo("test.com."),
-					Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
-					Ttl:  pointerTo(int64(300)),
-					Records: &[]stackitdnsclient.Record{
-						{Content: pointerTo("1.2.3.4")},
-					},
-					Id: pointerTo("1234"),
+	var rrSets = stackitdnsclient.ListRecordSetsResponse{
+		ItemsPerPage: pointerTo(int64(20)),
+		Message:      pointerTo("success"),
+		RrSets: &[]stackitdnsclient.RecordSet{
+			{
+				Name: pointerTo(domain),
+				Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
+				Ttl:  pointerTo(int64(300)),
+				Records: &[]stackitdnsclient.Record{
+					{Content: pointerTo(record)},
 				},
+				Id: pointerTo(id),
 			},
-			TotalItems: pointerTo(int64(2)),
-			TotalPages: pointerTo(int64(1)),
-		}
-	case "5678":
-		rrSets = stackitdnsclient.ListRecordSetsResponse{
-			ItemsPerPage: pointerTo(int64(20)),
-			Message:      pointerTo("success"),
-			RrSets: &[]stackitdnsclient.RecordSet{
-				{
-					Name: pointerTo("test2.com."),
-					Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
-					Ttl:  pointerTo(int64(300)),
-					Records: &[]stackitdnsclient.Record{
-						{Content: pointerTo("5.6.7.8")},
-					},
-					Id: pointerTo("5678"),
-				},
-			},
-			TotalItems: pointerTo(int64(2)),
-			TotalPages: pointerTo(int64(1)),
-		}
+		},
+		TotalItems: pointerTo(int64(2)),
+		TotalPages: pointerTo(int64(1)),
 	}
 
 	successResponseBytes, err := json.Marshal(rrSets)
@@ -386,10 +363,10 @@ func getServerRecords(t *testing.T) *httptest.Server {
 		getZonesResponseRecordsNonPaged(t, w)
 	})
 	mux.HandleFunc("/v1/projects/1234/zones/1234/rrsets", func(w http.ResponseWriter, r *http.Request) {
-		getRrsetsResponseRecordsNonPaged(t, w, "1234")
+		getRrsetsResponseRecordsNonPaged(t, w, "test.com.", "1.2.3.4", "1234")
 	})
 	mux.HandleFunc("/v1/projects/1234/zones/5678/rrsets", func(w http.ResponseWriter, r *http.Request) {
-		getRrsetsResponseRecordsNonPaged(t, w, "5678")
+		getRrsetsResponseRecordsNonPaged(t, w, "test2.com.", "5.6.7.8", "5689")
 	})
 
 	return server

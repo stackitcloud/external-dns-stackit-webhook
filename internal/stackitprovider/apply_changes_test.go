@@ -174,13 +174,13 @@ func TestPartialUpdate(t *testing.T) {
 	mux.HandleFunc(
 		"/v1/projects/1234/zones/1234/rrsets",
 		func(w http.ResponseWriter, r *http.Request) {
-			getRrsetsResponseRecordsNonPaged(t, w, "1234")
+			getRrsetsResponseRecordsNonPaged(t, w, "test.com.", "1.2.3.4", "1234")
 		},
 	)
 	mux.HandleFunc(
 		"/v1/projects/1234/zones/5678/rrsets",
 		func(w http.ResponseWriter, r *http.Request) {
-			getRrsetsResponseRecordsNonPaged(t, w, "5678")
+			getRrsetsResponseRecordsNonPaged(t, w, "test2.com.", "5.6.7.8", "5678")
 		},
 	)
 
@@ -232,13 +232,13 @@ func setUpChangeTypeEndpoints(
 		mux.HandleFunc(
 			"/v1/projects/1234/zones/1234/rrsets",
 			func(w http.ResponseWriter, r *http.Request) {
-				getRrsetsResponseRecordsNonPaged(t, w, "1234")
+				getRrsetsResponseRecordsNonPaged(t, w, "test.com.", "1.2.3.4", "1234")
 			},
 		)
 		mux.HandleFunc(
 			"/v1/projects/1234/zones/5678/rrsets",
 			func(w http.ResponseWriter, r *http.Request) {
-				getRrsetsResponseRecordsNonPaged(t, w, "5678")
+				getRrsetsResponseRecordsNonPaged(t, w, "test2.com.", "5.6.7.8", "5678")
 			},
 		)
 	}
