@@ -69,6 +69,37 @@ linters:
     - varnamelen
     - wrapcheck
     - wsl
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - dupl
+          - errcheck
+          - gocyclo
+          - gosec
+        path: _test\.go
+      - linters:
+          - errcheck
+          - gocognit
+          - nlreturn
+          - unparam
+        path: include/
+      - linters:
+          - gosec
+        path: settings/hmac/
+        text: weak cryptographic primitive
+      - linters:
+          - staticcheck
+        text: 'SA9003:'
+      - linters:
+          - lll
+        source: '^//go:generate '
+      - path: (.+)\.go$
+        text: abcdef
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
   settings:
     bidichk:
       left-to-right-embedding: true
@@ -136,25 +167,14 @@ linters:
           skipBalanced: true
         hugeParam:
           sizeThreshold: 80
-        nestingReduce:
-          bodyWidth: 5
         rangeExprCopy:
           sizeThreshold: 512
           skipTestFuncs: true
         rangeValCopy:
           sizeThreshold: 32
           skipTestFuncs: true
-        ruleguard:
-          debug: emptyDecl
-          failOn: dsl
-        tooManyResultsChecker:
-          maxResults: 10
-        truncateCmp:
-          skipArchDependent: true
         underef:
           skipRecvDeref: true
-        unnamedResult:
-          checkExported: true
     gocyclo:
       min-complexity: 10
     godot:
@@ -342,37 +362,6 @@ linters:
       allow-cuddle-declarations: false
       force-err-cuddling: false
       force-short-decl-cuddling: false
-  exclusions:
-    generated: lax
-    rules:
-      - linters:
-          - dupl
-          - errcheck
-          - gocyclo
-          - gosec
-        path: _test\.go
-      - linters:
-          - errcheck
-          - gocognit
-          - nlreturn
-          - unparam
-        path: include/
-      - linters:
-          - gosec
-        path: settings/hmac/
-        text: weak cryptographic primitive
-      - linters:
-          - staticcheck
-        text: 'SA9003:'
-      - linters:
-          - lll
-        source: '^//go:generate '
-      - path: (.+)\.go$
-        text: abcdef
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
 issues:
   max-issues-per-linter: 0
   max-same-issues: 0
