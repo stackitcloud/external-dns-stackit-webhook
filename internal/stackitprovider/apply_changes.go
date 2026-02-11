@@ -13,12 +13,17 @@ import (
 
 // ApplyChanges applies a given set of changes in a given zone.
 func (d *StackitDNSProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
-	var tasks []changeTask
+	// Preallocate to avoid repeated growth (prealloc)
+	totalTasks := len(changes.Create) + len(changes.UpdateNew) + len(changes.Delete)
+	tasks := make([]changeTask, 0, totalTasks)
+
 	// create rr set. POST /v1/projects/{projectId}/zones/{zoneId}/rrsets
 	tasks = append(tasks, d.buildRRSetTasks(changes.Create, CREATE)...)
 	// update rr set. PATCH /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
 	tasks = append(tasks, d.buildRRSetTasks(changes.UpdateNew, UPDATE)...)
+
 	d.logger.Info("records to delete", zap.String("records", fmt.Sprintf("%v", changes.Delete)))
+
 	// delete rr set. DELETE /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
 	tasks = append(tasks, d.buildRRSetTasks(changes.Delete, DELETE)...)
 

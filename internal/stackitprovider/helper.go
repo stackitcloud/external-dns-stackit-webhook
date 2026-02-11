@@ -16,19 +16,24 @@ func findBestMatchingZone(
 	zones []stackitdnsclient.Zone,
 ) (*stackitdnsclient.Zone, bool) {
 	count := 0
-	var domainZone stackitdnsclient.Zone
-	for _, zone := range zones {
-		if len(*zone.DnsName) > count && strings.Contains(rrSetName, *zone.DnsName) {
-			count = len(*zone.DnsName)
+	var domainZone *stackitdnsclient.Zone
+
+	for i := range zones {
+		zone := &zones[i]
+		if zone.DnsName == nil {
+			continue
+		}
+		if l := len(*zone.DnsName); l > count && strings.Contains(rrSetName, *zone.DnsName) {
+			count = l
 			domainZone = zone
 		}
 	}
 
-	if count == 0 {
+	if domainZone == nil {
 		return nil, false
 	}
 
-	return &domainZone, true
+	return domainZone, true
 }
 
 // findRRSet finds a record set by name and type in a list of record sets.
@@ -36,9 +41,13 @@ func findRRSet(
 	rrSetName, recordType string,
 	rrSets []stackitdnsclient.RecordSet,
 ) (*stackitdnsclient.RecordSet, bool) {
-	for _, rrSet := range rrSets {
+	for i := range rrSets {
+		rrSet := &rrSets[i]
+		if rrSet.Name == nil || rrSet.Type == nil {
+			continue
+		}
 		if *rrSet.Name == rrSetName && string(*rrSet.Type) == recordType {
-			return &rrSet, true
+			return rrSet, true
 		}
 	}
 

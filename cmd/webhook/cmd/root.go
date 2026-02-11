@@ -53,7 +53,7 @@ var rootCmd = &cobra.Command{
 		stackitProvider, err := stackitprovider.NewStackitDNSProvider(
 			logger.With(zap.String("component", "stackitprovider")),
 			// ExternalDNS provider config
-			stackitprovider.Config{
+			&stackitprovider.Config{
 				ProjectId:    projectID,
 				DomainFilter: endpointDomainFilter,
 				DryRun:       dryRun,

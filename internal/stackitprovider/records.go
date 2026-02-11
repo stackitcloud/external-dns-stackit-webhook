@@ -23,7 +23,11 @@ func (d *StackitDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint,
 		go d.fetchRecordsWorker(ctx, zoneIdsChannel, endpointsErrorChannel)
 	}
 
-	for _, zone := range zones {
+	for i := range zones {
+		zone := &zones[i]
+		if zone.Id == nil {
+			continue
+		}
 		zoneIdsChannel <- *zone.Id
 	}
 
@@ -84,21 +88,39 @@ func (d *StackitDNSProvider) collectEndPoints(
 	rrSets []stackitdnsclient.RecordSet,
 ) []*endpoint.Endpoint {
 	var endpoints []*endpoint.Endpoint
-	for _, r := range rrSets {
-		recordType := string(*r.Type)
-		if provider.SupportedRecordType(recordType) {
-			for _, _r := range *r.Records {
-				endpoints = append(
-					endpoints,
-					endpoint.NewEndpointWithTTL(
-						*r.Name,
-						recordType,
-						endpoint.TTL(*r.Ttl),
-						*_r.Content,
-					),
-				)
-			}
+
+	for i := range rrSets {
+		r := &rrSets[i]
+
+		name, recordType, ttl, records, ok := recordSetCoreFields(r)
+		if !ok || !provider.SupportedRecordType(recordType) {
+			continue
 		}
+
+		endpoints = append(endpoints, endpointsFromRecords(name, recordType, ttl, records)...)
+	}
+
+	return endpoints
+}
+
+func recordSetCoreFields(r *stackitdnsclient.RecordSet) (name string, recordType string, ttl endpoint.TTL, records []stackitdnsclient.Record, ok bool) {
+	if r == nil || r.Type == nil || r.Name == nil || r.Ttl == nil || r.Records == nil {
+		return "", "", 0, nil, false
+	}
+
+	return *r.Name, string(*r.Type), endpoint.TTL(*r.Ttl), *r.Records, true
+}
+
+func endpointsFromRecords(name, recordType string, ttl endpoint.TTL, records []stackitdnsclient.Record) []*endpoint.Endpoint {
+	endpoints := make([]*endpoint.Endpoint, 0, len(records))
+
+	for i := range records {
+		rec := &records[i]
+		if rec.Content == nil {
+			continue
+		}
+
+		endpoints = append(endpoints, endpoint.NewEndpointWithTTL(name, recordType, ttl, *rec.Content))
 	}
 
 	return endpoints

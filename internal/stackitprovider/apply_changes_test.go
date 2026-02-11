@@ -48,7 +48,7 @@ func testApplyChanges(t *testing.T, changeType ChangeType) {
 	// Test cases
 	tests := getApplyChangesBasicTestCases(validZoneResponse, validRRSetResponse, invalidZoneResponse)
 
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint: gocritic // we dont want to use pointers here to keep the test simple
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()

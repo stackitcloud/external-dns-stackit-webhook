@@ -169,7 +169,7 @@ func TestZoneEndpoint403Records(t *testing.T) {
 
 	stackitDnsProvider, err := NewStackitDNSProvider(
 		zap.NewNop(),
-		Config{
+		&Config{
 			ProjectId:    "1234",
 			DomainFilter: endpoint.DomainFilter{},
 			DryRun:       false,
@@ -189,7 +189,7 @@ func TestZoneEndpoint403Records(t *testing.T) {
 func getDefaultTestProvider(server *httptest.Server) (*StackitDNSProvider, error) {
 	stackitDnsProvider, err := NewStackitDNSProvider(
 		zap.NewNop(),
-		Config{
+		&Config{
 			ProjectId:    "1234",
 			DomainFilter: endpoint.DomainFilter{},
 			DryRun:       false,
@@ -330,7 +330,8 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 
 	var rrSets stackitdnsclient.ListRecordSetsResponse
 
-	if domain == "1234" {
+	switch domain {
+	case "1234":
 		rrSets = stackitdnsclient.ListRecordSetsResponse{
 			ItemsPerPage: pointerTo(int64(20)),
 			Message:      pointerTo("success"),
@@ -348,7 +349,7 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 			TotalItems: pointerTo(int64(2)),
 			TotalPages: pointerTo(int64(1)),
 		}
-	} else if domain == "5678" {
+	case "5678":
 		rrSets = stackitdnsclient.ListRecordSetsResponse{
 			ItemsPerPage: pointerTo(int64(20)),
 			Message:      pointerTo("success"),
