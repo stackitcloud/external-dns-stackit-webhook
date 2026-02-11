@@ -38,7 +38,7 @@ func TestWebhook_AdjustEndpoints(t *testing.T) {
 				RecordType: "A",
 			},
 		}
-		mockProvider.EXPECT().AdjustEndpoints(endpoints).Return(endpoints).Times(1)
+		mockProvider.EXPECT().AdjustEndpoints(endpoints).Return(endpoints, nil).Times(1)
 
 		body, err := json.Marshal(endpoints)
 		assert.NoError(t, err)

@@ -24,7 +24,7 @@ type StackitDNSProvider struct {
 // NewStackitDNSProvider creates a new STACKIT DNS stackitprovider.
 func NewStackitDNSProvider(
 	logger *zap.Logger,
-	providerConfig Config,
+	providerConfig *Config,
 	stackitConfig ...stackitconfig.ConfigurationOption,
 ) (*StackitDNSProvider, error) {
 	apiClient, err := stackitdnsclient.NewAPIClient(stackitConfig...)

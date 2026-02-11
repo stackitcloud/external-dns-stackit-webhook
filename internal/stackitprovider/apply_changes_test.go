@@ -48,7 +48,7 @@ func testApplyChanges(t *testing.T, changeType ChangeType) {
 	// Test cases
 	tests := getApplyChangesBasicTestCases(validZoneResponse, validRRSetResponse, invalidZoneResponse)
 
-	for _, tt := range tests {
+	for _, tt := range tests { //nolint: gocritic // this is a test
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
@@ -174,13 +174,13 @@ func TestPartialUpdate(t *testing.T) {
 	mux.HandleFunc(
 		"/v1/projects/1234/zones/1234/rrsets",
 		func(w http.ResponseWriter, r *http.Request) {
-			getRrsetsResponseRecordsNonPaged(t, w, "1234")
+			getRrsetsResponseRecordsNonPaged(t, w, "test.com.", "1.2.3.4", "1234")
 		},
 	)
 	mux.HandleFunc(
 		"/v1/projects/1234/zones/5678/rrsets",
 		func(w http.ResponseWriter, r *http.Request) {
-			getRrsetsResponseRecordsNonPaged(t, w, "5678")
+			getRrsetsResponseRecordsNonPaged(t, w, "test2.com.", "5.6.7.8", "5678")
 		},
 	)
 
@@ -232,13 +232,13 @@ func setUpChangeTypeEndpoints(
 		mux.HandleFunc(
 			"/v1/projects/1234/zones/1234/rrsets",
 			func(w http.ResponseWriter, r *http.Request) {
-				getRrsetsResponseRecordsNonPaged(t, w, "1234")
+				getRrsetsResponseRecordsNonPaged(t, w, "test.com.", "1.2.3.4", "1234")
 			},
 		)
 		mux.HandleFunc(
 			"/v1/projects/1234/zones/5678/rrsets",
 			func(w http.ResponseWriter, r *http.Request) {
-				getRrsetsResponseRecordsNonPaged(t, w, "5678")
+				getRrsetsResponseRecordsNonPaged(t, w, "test2.com.", "5.6.7.8", "5678")
 			},
 		)
 	}
@@ -403,7 +403,7 @@ func getValidResponseRRSetAll() stackitdnsclient.ListRecordSetsResponse {
 		RrSets: &[]stackitdnsclient.RecordSet{
 			{
 				Name: pointerTo("test.com"),
-				Type: pointerTo("A"),
+				Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
 				Ttl:  pointerTo(int64(300)),
 				Records: &[]stackitdnsclient.Record{
 					{Content: pointerTo("1.2.3.4")},

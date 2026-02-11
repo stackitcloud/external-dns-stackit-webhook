@@ -31,7 +31,7 @@ func TestWebhook_DomainFilter(t *testing.T) {
 	app := api.New(mockLogger, mockMetricsCollector, mockProvider)
 	mockProvider.EXPECT().
 		GetDomainFilter().
-		Return(expectedDomainFilter).
+		Return(&expectedDomainFilter).
 		Times(1)
 
 	req := httptest.NewRequest(http.MethodGet, "/", bytes.NewReader(nil))

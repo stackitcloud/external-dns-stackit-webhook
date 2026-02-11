@@ -74,7 +74,7 @@ func TestGetStackitRRSetRecordPost(t *testing.T) {
 	expected := stackitdnsclient.CreateRecordSetPayload{
 		Name: pointerTo("test."),
 		Ttl:  pointerTo(int64(300)),
-		Type: pointerTo("A"),
+		Type: (stackitdnsclient.CreateRecordSetPayloadGetTypeAttributeType)(pointerTo("A")),
 		Records: &[]stackitdnsclient.RecordPayload{
 			{
 				Content: pointerTo("192.0.2.1"),
@@ -125,9 +125,9 @@ func TestFindRRSet(t *testing.T) {
 	t.Parallel()
 
 	rrSets := []stackitdnsclient.RecordSet{
-		{Name: pointerTo("www.foo.com"), Type: pointerTo("A")},
-		{Name: pointerTo("www.bar.com"), Type: pointerTo("A")},
-		{Name: pointerTo("www.baz.com"), Type: pointerTo("A")},
+		{Name: pointerTo("www.foo.com"), Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A)},
+		{Name: pointerTo("www.bar.com"), Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A)},
+		{Name: pointerTo("www.baz.com"), Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A)},
 	}
 
 	tests := []struct {
