@@ -17,5 +17,5 @@ func TestGetDomainFilter(t *testing.T) {
 	assert.NoError(t, err)
 
 	domainFilter := stackitDnsProvider.GetDomainFilter()
-	assert.Equal(t, domainFilter, endpoint.DomainFilter{})
+	assert.Equal(t, domainFilter, &endpoint.DomainFilter{})
 }

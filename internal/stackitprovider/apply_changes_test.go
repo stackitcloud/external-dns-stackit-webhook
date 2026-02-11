@@ -403,7 +403,7 @@ func getValidResponseRRSetAll() stackitdnsclient.ListRecordSetsResponse {
 		RrSets: &[]stackitdnsclient.RecordSet{
 			{
 				Name: pointerTo("test.com"),
-				Type: pointerTo("A"),
+				Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
 				Ttl:  pointerTo(int64(300)),
 				Records: &[]stackitdnsclient.Record{
 					{Content: pointerTo("1.2.3.4")},

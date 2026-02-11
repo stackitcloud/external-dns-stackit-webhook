@@ -85,13 +85,14 @@ func (d *StackitDNSProvider) collectEndPoints(
 ) []*endpoint.Endpoint {
 	var endpoints []*endpoint.Endpoint
 	for _, r := range rrSets {
-		if provider.SupportedRecordType(*r.Type) {
+		recordType := string(*r.Type)
+		if provider.SupportedRecordType(recordType) {
 			for _, _r := range *r.Records {
 				endpoints = append(
 					endpoints,
 					endpoint.NewEndpointWithTTL(
 						*r.Name,
-						*r.Type,
+						recordType,
 						endpoint.TTL(*r.Ttl),
 						*_r.Content,
 					),

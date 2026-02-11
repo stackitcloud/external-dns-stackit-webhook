@@ -250,7 +250,7 @@ func getRrsetsHandlerReecodsPaged(t *testing.T, domain string) http.HandlerFunc 
 				RrSets: &[]stackitdnsclient.RecordSet{
 					{
 						Name: pointerTo("test.com."),
-						Type: pointerTo("A"),
+						Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
 						Ttl:  pointerTo(int64(300)),
 						Records: &[]stackitdnsclient.Record{
 							{Content: pointerTo("1.2.3.4")},
@@ -268,7 +268,7 @@ func getRrsetsHandlerReecodsPaged(t *testing.T, domain string) http.HandlerFunc 
 				RrSets: &[]stackitdnsclient.RecordSet{
 					{
 						Name: pointerTo("test2.com."),
-						Type: pointerTo("A"),
+						Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
 						Ttl:  pointerTo(int64(300)),
 						Records: &[]stackitdnsclient.Record{
 							{Content: pointerTo("5.6.7.8")},
@@ -337,7 +337,7 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 			RrSets: &[]stackitdnsclient.RecordSet{
 				{
 					Name: pointerTo("test.com."),
-					Type: pointerTo("A"),
+					Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
 					Ttl:  pointerTo(int64(300)),
 					Records: &[]stackitdnsclient.Record{
 						{Content: pointerTo("1.2.3.4")},
@@ -355,7 +355,7 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 			RrSets: &[]stackitdnsclient.RecordSet{
 				{
 					Name: pointerTo("test2.com."),
-					Type: pointerTo("A"),
+					Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
 					Ttl:  pointerTo(int64(300)),
 					Records: &[]stackitdnsclient.Record{
 						{Content: pointerTo("5.6.7.8")},
