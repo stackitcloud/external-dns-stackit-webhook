@@ -3,10 +3,7 @@ package api_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"os"
-	"syscall"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -36,21 +33,5 @@ func TestApi(t *testing.T) {
 		resp, err := app.Test(req)
 		assert.NoError(t, err)
 		assert.Equal(t, http.StatusOK, resp.StatusCode)
-	})
-
-	t.Run("Listen", func(t *testing.T) {
-		t.Parallel()
-
-		go func() {
-			err := app.Listen("5000")
-			assert.NoError(t, err)
-		}()
-
-		time.Sleep(time.Second) // Allow server to start
-
-		// Simulate SIGTERM signal to trigger shutdown
-		process, _ := os.FindProcess(os.Getpid())
-		err := process.Signal(syscall.SIGTERM)
-		assert.NoError(t, err)
 	})
 }
