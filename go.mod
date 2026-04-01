@@ -3,7 +3,7 @@ module github.com/stackitcloud/external-dns-stackit-webhook
 go 1.26.0
 
 require (
-	github.com/goccy/go-json v0.10.5
+	github.com/goccy/go-json v0.10.6
 	github.com/gofiber/adaptor/v2 v2.2.1
 	github.com/gofiber/fiber/v2 v2.52.12
 	github.com/prometheus/client_golang v1.23.2
