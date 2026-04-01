@@ -1,0 +1,73 @@
+# Dependabot configuration for stackitcloud/external-dns-stackit-webhook
+# Documentation: https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+
+version: 2
+
+updates:
+  # ────��─────────────────────────────────────────
+  # Go modules  (go.mod / go.sum)
+  # ──────────────────────────────────────────────
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 10
+    reviewers:
+      - "stackitcloud/dns"
+    labels:
+      - "dependencies"
+      - "go"
+    commit-message:
+      prefix: "deps(go)"
+      include: "scope"
+    # Ignore indirect-only / low-churn deps that are pinned upstream
+    ignore:
+      - dependency-name: "k8s.io/*"
+        update-types:
+          - "version-update:semver-major"
+      - dependency-name: "sigs.k8s.io/*"
+        update-types:
+          - "version-update:semver-major"
+
+  # ──────────────────────────────────────────────
+  # GitHub Actions  (.github/workflows/*.yml)
+  # ──────────────────────────────────────────────
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "stackitcloud/dns"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "deps(ci)"
+      include: "scope"
+
+  # ──────────────────────────────────────────────
+  # Docker  (Dockerfile)
+  # ──────────────────────────────────────────────
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Europe/Berlin"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "stackitcloud/dns"
+    labels:
+      - "dependencies"
+      - "docker"
+    commit-message:
+      prefix: "deps(docker)"
+      include: "scope"
