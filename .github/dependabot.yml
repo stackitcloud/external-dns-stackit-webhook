@@ -4,7 +4,7 @@
 version: 2
 
 updates:
-  # ────��─────────────────────────────────────────
+  # ──────────────────────────────────────────────
   # Go modules  (go.mod / go.sum)
   # ──────────────────────────────────────────────
   - package-ecosystem: "gomod"
@@ -21,9 +21,9 @@ updates:
       - "dependencies"
       - "go"
     commit-message:
-      prefix: "deps(go)"
-      include: "scope"
-    # Ignore indirect-only / low-churn deps that are pinned upstream
+      prefix: "chore"
+      prefix-development: "chore"
+    # Ignore k8s major bumps — they require coordinated upgrades with external-dns
     ignore:
       - dependency-name: "k8s.io/*"
         update-types:
@@ -34,7 +34,7 @@ updates:
 
   # ──────────────────────────────────────────────
   # GitHub Actions  (.github/workflows/*.yml)
-  # ──────────────────────────────────────────────
+  # ──────────��───────────────────────────────────
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -49,8 +49,8 @@ updates:
       - "dependencies"
       - "github-actions"
     commit-message:
-      prefix: "deps(ci)"
-      include: "scope"
+      prefix: "chore"
+      prefix-development: "chore"
 
   # ──────────────────────────────────────────────
   # Docker  (Dockerfile)
@@ -69,5 +69,5 @@ updates:
       - "dependencies"
       - "docker"
     commit-message:
-      prefix: "deps(docker)"
-      include: "scope"
+      prefix: "chore"
+      prefix-development: "chore"
