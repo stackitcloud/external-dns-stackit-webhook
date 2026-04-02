@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 )
@@ -72,15 +72,15 @@ func TestGetStackitRRSetRecordPost(t *testing.T) {
 		},
 	}
 	expected := stackitdnsclient.CreateRecordSetPayload{
-		Name: pointerTo("test."),
-		Ttl:  pointerTo(int64(300)),
-		Type: (stackitdnsclient.CreateRecordSetPayloadGetTypeAttributeType)(pointerTo("A")),
-		Records: &[]stackitdnsclient.RecordPayload{
+		Name: "test.",
+		Ttl:  pointerTo(int32(300)),
+		Type: "A",
+		Records: []stackitdnsclient.RecordPayload{
 			{
-				Content: pointerTo("192.0.2.1"),
+				Content: "192.0.2.1",
 			},
 			{
-				Content: pointerTo("192.0.2.2"),
+				Content: "192.0.2.2",
 			},
 		},
 	}
@@ -94,9 +94,9 @@ func TestFindBestMatchingZone(t *testing.T) {
 	t.Parallel()
 
 	zones := []stackitdnsclient.Zone{
-		{DnsName: pointerTo("foo.com")},
-		{DnsName: pointerTo("bar.com")},
-		{DnsName: pointerTo("baz.com")},
+		{DnsName: "foo.com"},
+		{DnsName: "bar.com"},
+		{DnsName: "baz.com"},
 	}
 
 	tests := []struct {
@@ -125,9 +125,9 @@ func TestFindRRSet(t *testing.T) {
 	t.Parallel()
 
 	rrSets := []stackitdnsclient.RecordSet{
-		{Name: pointerTo("www.foo.com"), Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A)},
-		{Name: pointerTo("www.bar.com"), Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A)},
-		{Name: pointerTo("www.baz.com"), Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A)},
+		{Name: "www.foo.com", Type: "A"},
+		{Name: "www.bar.com", Type: "A"},
+		{Name: "www.baz.com", Type: "A"},
 	}
 
 	tests := []struct {
@@ -197,13 +197,13 @@ func TestGetStackitRRSetRecordPatch(t *testing.T) {
 
 	expected := stackitdnsclient.PartialUpdateRecordSetPayload{
 		Name: pointerTo("test."),
-		Ttl:  pointerTo(int64(300)),
-		Records: &[]stackitdnsclient.RecordPayload{
+		Ttl:  pointerTo(int32(300)),
+		Records: []stackitdnsclient.RecordPayload{
 			{
-				Content: pointerTo("192.0.2.1"),
+				Content: "192.0.2.1",
 			},
 			{
-				Content: pointerTo("192.0.2.2"),
+				Content: "192.0.2.2",
 			},
 		},
 	}

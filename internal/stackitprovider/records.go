@@ -3,7 +3,7 @@ package stackitprovider
 import (
 	"context"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"
 )
@@ -25,10 +25,7 @@ func (d *StackitDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint,
 
 	for i := range zones {
 		zone := &zones[i]
-		if zone.Id == nil {
-			continue
-		}
-		zoneIdsChannel <- *zone.Id
+		zoneIdsChannel <- zone.Id
 	}
 
 	for i := 0; i < len(zones); i++ {
@@ -104,11 +101,11 @@ func (d *StackitDNSProvider) collectEndPoints(
 }
 
 func recordSetCoreFields(r *stackitdnsclient.RecordSet) (name string, recordType string, ttl endpoint.TTL, records []stackitdnsclient.Record, ok bool) {
-	if r == nil || r.Type == nil || r.Name == nil || r.Ttl == nil || r.Records == nil {
+	if r == nil || len(r.Records) == 0 {
 		return "", "", 0, nil, false
 	}
 
-	return *r.Name, string(*r.Type), endpoint.TTL(*r.Ttl), *r.Records, true
+	return r.Name, r.Type, endpoint.TTL(r.Ttl), r.Records, true
 }
 
 func endpointsFromRecords(name, recordType string, ttl endpoint.TTL, records []stackitdnsclient.Record) []*endpoint.Endpoint {
@@ -116,11 +113,8 @@ func endpointsFromRecords(name, recordType string, ttl endpoint.TTL, records []s
 
 	for i := range records {
 		rec := &records[i]
-		if rec.Content == nil {
-			continue
-		}
 
-		endpoints = append(endpoints, endpoint.NewEndpointWithTTL(name, recordType, ttl, *rec.Content))
+		endpoints = append(endpoints, endpoint.NewEndpointWithTTL(name, recordType, ttl, rec.Content))
 	}
 
 	return endpoints

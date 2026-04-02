@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
@@ -124,7 +124,7 @@ func (d *StackitDNSProvider) createRRSet(
 		return fmt.Errorf("no matching zone found for %s", change.DNSName)
 	}
 
-	logFields := getLogFields(change, CREATE, *resultZone.Id)
+	logFields := getLogFields(change, CREATE, resultZone.Id)
 	d.logger.Info("create record set", logFields...)
 
 	if d.dryRun {
@@ -138,7 +138,7 @@ func (d *StackitDNSProvider) createRRSet(
 	rrSetPayload := getStackitRecordSetPayload(change)
 
 	// ignore all errors to just retry on next run
-	_, err := d.apiClient.CreateRecordSet(ctx, d.projectId, *resultZone.Id).CreateRecordSetPayload(rrSetPayload).Execute()
+	_, err := d.apiClient.DefaultAPI.CreateRecordSet(ctx, d.projectId, resultZone.Id).CreateRecordSetPayload(rrSetPayload).Execute()
 	if err != nil {
 		d.logger.Error("error creating record set", zap.Error(err))
 
@@ -163,7 +163,7 @@ func (d *StackitDNSProvider) updateRRSet(
 		return err
 	}
 
-	logFields := getLogFields(change, UPDATE, *resultRRSet.Id)
+	logFields := getLogFields(change, UPDATE, resultRRSet.Id)
 	d.logger.Info("update record set", logFields...)
 
 	if d.dryRun {
@@ -174,7 +174,7 @@ func (d *StackitDNSProvider) updateRRSet(
 
 	rrSet := getStackitPartialUpdateRecordSetPayload(change)
 
-	_, err = d.apiClient.PartialUpdateRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).PartialUpdateRecordSetPayload(rrSet).Execute()
+	_, err = d.apiClient.DefaultAPI.PartialUpdateRecordSet(ctx, d.projectId, resultZone.Id, resultRRSet.Id).PartialUpdateRecordSetPayload(rrSet).Execute()
 	if err != nil {
 		d.logger.Error("error updating record set", zap.Error(err))
 
@@ -199,7 +199,7 @@ func (d *StackitDNSProvider) deleteRRSet(
 		return err
 	}
 
-	logFields := getLogFields(change, DELETE, *resultRRSet.Id)
+	logFields := getLogFields(change, DELETE, resultRRSet.Id)
 	d.logger.Info("delete record set", logFields...)
 
 	if d.dryRun {
@@ -208,7 +208,7 @@ func (d *StackitDNSProvider) deleteRRSet(
 		return nil
 	}
 
-	_, err = d.apiClient.DeleteRecordSet(ctx, d.projectId, *resultZone.Id, *resultRRSet.Id).Execute()
+	_, err = d.apiClient.DefaultAPI.DeleteRecordSet(ctx, d.projectId, resultZone.Id, resultRRSet.Id).Execute()
 	if err != nil {
 		d.logger.Error("error deleting record set", zap.Error(err))
 

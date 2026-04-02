@@ -8,7 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"github.com/stretchr/testify/assert"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/plan"
@@ -114,8 +114,7 @@ func TestNoRRSetFound(t *testing.T) {
 	ctx := context.Background()
 	validZoneResponse := getValidResponseZoneAllBytes(t)
 	rrSets := getValidResponseRRSetAll()
-	rrSet := *rrSets.RrSets
-	*rrSet[0].Name = "notfound.test.com"
+	rrSets.RrSets[0].Name = "notfound.test.com"
 	validRRSetResponse, err := json.Marshal(rrSets)
 	assert.NoError(t, err)
 
@@ -375,13 +374,13 @@ func getValidResponseZoneAllBytes(t *testing.T) []byte {
 
 func getValidZoneResponseAll() stackitdnsclient.ListZonesResponse {
 	return stackitdnsclient.ListZonesResponse{
-		ItemsPerPage: pointerTo(int64(10)),
+		ItemsPerPage: int32(10),
 		Message:      pointerTo("success"),
-		TotalItems:   pointerTo(int64(2)),
-		TotalPages:   pointerTo(int64(1)),
-		Zones: &[]stackitdnsclient.Zone{
-			{Id: pointerTo("1234"), DnsName: pointerTo("test.com")},
-			{Id: pointerTo("5678"), DnsName: pointerTo("test2.com")},
+		TotalItems:   int32(2),
+		TotalPages:   int32(1),
+		Zones: []stackitdnsclient.Zone{
+			{Id: "1234", DnsName: "test.com"},
+			{Id: "5678", DnsName: "test2.com"},
 		},
 	}
 }
@@ -389,28 +388,42 @@ func getValidZoneResponseAll() stackitdnsclient.ListZonesResponse {
 func getValidResponseRRSetAllBytes(t *testing.T) []byte {
 	t.Helper()
 
-	rrSets := getValidResponseRRSetAll()
-	validRRSetResponse, err := json.Marshal(rrSets)
+	rrSetResponse := getValidRecordSetResponse()
+	validRRSetResponse, err := json.Marshal(rrSetResponse)
 	assert.NoError(t, err)
 
 	return validRRSetResponse
 }
 
+func getValidRecordSetResponse() stackitdnsclient.RecordSetResponse {
+	return stackitdnsclient.RecordSetResponse{
+		Message: pointerTo("success"),
+		Rrset: stackitdnsclient.RecordSet{
+			Name: "test.com",
+			Type: "A",
+			Ttl:  int32(300),
+			Records: []stackitdnsclient.Record{
+				{Content: "1.2.3.4"},
+			},
+		},
+	}
+}
+
 func getValidResponseRRSetAll() stackitdnsclient.ListRecordSetsResponse {
 	return stackitdnsclient.ListRecordSetsResponse{
-		ItemsPerPage: pointerTo(int64(20)),
+		ItemsPerPage: int32(20),
 		Message:      pointerTo("success"),
-		RrSets: &[]stackitdnsclient.RecordSet{
+		RrSets: []stackitdnsclient.RecordSet{
 			{
-				Name: pointerTo("test.com"),
-				Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
-				Ttl:  pointerTo(int64(300)),
-				Records: &[]stackitdnsclient.Record{
-					{Content: pointerTo("1.2.3.4")},
+				Name: "test.com",
+				Type: "A",
+				Ttl:  int32(300),
+				Records: []stackitdnsclient.Record{
+					{Content: "1.2.3.4"},
 				},
 			},
 		},
-		TotalItems: pointerTo(int64(2)),
-		TotalPages: pointerTo(int64(1)),
+		TotalItems: int32(2),
+		TotalPages: int32(1),
 	}
 }

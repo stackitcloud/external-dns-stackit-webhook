@@ -3,7 +3,7 @@ package stackitprovider
 import (
 	"context"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
@@ -29,7 +29,7 @@ func newZoneFetcher(
 func (z *zoneFetcher) zones(ctx context.Context) ([]stackitdnsclient.Zone, error) {
 	if len(z.domainFilter.Filters) == 0 {
 		// no filters, return all zones
-		listRequest := z.apiClient.ListZones(ctx, z.projectId).ActiveEq(true)
+		listRequest := z.apiClient.DefaultAPI.ListZones(ctx, z.projectId).ActiveEq(true)
 		zones, err := z.fetchZones(listRequest)
 		if err != nil {
 			return nil, err
@@ -41,7 +41,7 @@ func (z *zoneFetcher) zones(ctx context.Context) ([]stackitdnsclient.Zone, error
 	var result []stackitdnsclient.Zone
 	// send one request per filter
 	for _, filter := range z.domainFilter.Filters {
-		listRequest := z.apiClient.ListZones(ctx, z.projectId).ActiveEq(true).DnsNameLike(filter)
+		listRequest := z.apiClient.DefaultAPI.ListZones(ctx, z.projectId).ActiveEq(true).DnsNameLike(filter)
 		zones, err := z.fetchZones(listRequest)
 		if err != nil {
 			return nil, err
@@ -66,17 +66,17 @@ func (z *zoneFetcher) fetchZones(
 		return nil, err
 	}
 
-	result = append(result, *zoneResponse.Zones...)
+	result = append(result, zoneResponse.Zones...)
 
 	// if there is more than one page, we need to loop over the other pages and
 	// issue another API request for each one of them
 	pager++
-	for int64(pager) <= *zoneResponse.TotalPages {
+	for pager <= zoneResponse.TotalPages {
 		zoneResponse, err := listRequest.Page(pager).Execute()
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, *zoneResponse.Zones...)
+		result = append(result, zoneResponse.Zones...)
 		pager++
 	}
 
