@@ -12,7 +12,7 @@ jobs:
     if: (github.actor != 'dependabot[bot]')
     steps:
       # Fetch project source
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
       - uses: returntocorp/semgrep-action@v1
         with:
