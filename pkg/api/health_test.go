@@ -11,7 +11,7 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
-	mock_provider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
+	mockprovider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
 )
 
 func TestHealth(t *testing.T) {
@@ -20,7 +20,7 @@ func TestHealth(t *testing.T) {
 	ctrl := gomock.NewController(t)
 
 	mockLogger := zap.NewNop()
-	mockProvider := mock_provider.NewMockProvider(ctrl)
+	mockProvider := mockprovider.NewMockProvider(ctrl)
 	mockMetricsCollector := getTestMockMetricsCollector(ctrl)
 
 	app := api.New(mockLogger, mockMetricsCollector, mockProvider)

@@ -111,7 +111,7 @@ func TestEmptyRRSetRouteRecords(t *testing.T) {
 
 			zones := stackitdnsclient.ListZonesResponse{
 				ItemsPerPage: int32(1),
-				Message:      pointerTo("success"),
+				Message:      new("success"),
 				TotalItems:   int32(2),
 				TotalPages:   int32(2),
 				Zones:        []stackitdnsclient.Zone{{Id: "1234"}},
@@ -213,7 +213,7 @@ func getZonesHandlerRecordsPaged(t *testing.T) http.HandlerFunc {
 		if r.URL.Query().Get("page") == "1" {
 			zones = stackitdnsclient.ListZonesResponse{
 				ItemsPerPage: int32(1),
-				Message:      pointerTo("success"),
+				Message:      new("success"),
 				TotalItems:   int32(2),
 				TotalPages:   int32(2),
 				Zones:        []stackitdnsclient.Zone{{Id: "1234"}},
@@ -222,7 +222,7 @@ func getZonesHandlerRecordsPaged(t *testing.T) http.HandlerFunc {
 		if r.URL.Query().Get("page") == "2" {
 			zones = stackitdnsclient.ListZonesResponse{
 				ItemsPerPage: int32(1),
-				Message:      pointerTo("success"),
+				Message:      new("success"),
 				TotalItems:   int32(2),
 				TotalPages:   int32(2),
 				Zones:        []stackitdnsclient.Zone{{Id: "5678"}},
@@ -246,7 +246,7 @@ func getRrsetsHandlerReecodsPaged(t *testing.T, domain string) http.HandlerFunc 
 		if domain == "1234" {
 			rrSets = stackitdnsclient.ListRecordSetsResponse{
 				ItemsPerPage: int32(1),
-				Message:      pointerTo("success"),
+				Message:      new("success"),
 				RrSets: []stackitdnsclient.RecordSet{
 					{
 						Name: "test.com.",
@@ -264,7 +264,7 @@ func getRrsetsHandlerReecodsPaged(t *testing.T, domain string) http.HandlerFunc 
 		if domain == "5678" {
 			rrSets = stackitdnsclient.ListRecordSetsResponse{
 				ItemsPerPage: int32(1),
-				Message:      pointerTo("success"),
+				Message:      new("success"),
 				RrSets: []stackitdnsclient.RecordSet{
 					{
 						Name: "test2.com.",
@@ -308,7 +308,7 @@ func getZonesResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter) {
 
 	zones := stackitdnsclient.ListZonesResponse{
 		ItemsPerPage: int32(10),
-		Message:      pointerTo("success"),
+		Message:      new("success"),
 		TotalItems:   int32(2),
 		TotalPages:   int32(1),
 		Zones: []stackitdnsclient.Zone{
@@ -330,7 +330,7 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 
 	var rrSets = stackitdnsclient.ListRecordSetsResponse{
 		ItemsPerPage: int32(20),
-		Message:      pointerTo("success"),
+		Message:      new("success"),
 		RrSets: []stackitdnsclient.RecordSet{
 			{
 				Name: domain,

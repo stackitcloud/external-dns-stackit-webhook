@@ -10,8 +10,8 @@ import (
 	"go.uber.org/mock/gomock"
 
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
-	metrics_collector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
-	mock_metrics_collector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics/mock"
+	metricscollector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
+	mockmetricscollector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics/mock"
 )
 
 func TestMetricsMiddleware(t *testing.T) {
@@ -20,7 +20,7 @@ func TestMetricsMiddleware(t *testing.T) {
 	mockCtrl := gomock.NewController(t)
 	defer mockCtrl.Finish()
 
-	metricsCollector := mock_metrics_collector.NewMockHttpApiMetrics(mockCtrl)
+	metricsCollector := mockmetricscollector.NewMockHttpApiMetrics(mockCtrl)
 
 	// Expectations
 	method := http.MethodGet
@@ -42,7 +42,7 @@ func TestMetricsMiddleware(t *testing.T) {
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
-func setupTestMetrics(collector metrics_collector.HttpApiMetrics) *fiber.App {
+func setupTestMetrics(collector metricscollector.HttpApiMetrics) *fiber.App {
 	app := fiber.New()
 	app.Use(api.NewMetricsMiddleware(collector))
 	app.Get("/", func(c *fiber.Ctx) error {
@@ -52,8 +52,8 @@ func setupTestMetrics(collector metrics_collector.HttpApiMetrics) *fiber.App {
 	return app
 }
 
-func getTestMockMetricsCollector(ctrl *gomock.Controller) metrics_collector.HttpApiMetrics {
-	metricsCollector := mock_metrics_collector.NewMockHttpApiMetrics(ctrl)
+func getTestMockMetricsCollector(ctrl *gomock.Controller) metricscollector.HttpApiMetrics {
+	metricsCollector := mockmetricscollector.NewMockHttpApiMetrics(ctrl)
 
 	metricsCollector.EXPECT().CollectRequest(gomock.Any(), gomock.Any(), gomock.Any()).AnyTimes()
 	metricsCollector.EXPECT().CollectTotalRequests().AnyTimes()

@@ -78,7 +78,7 @@ func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.Crea
 	return stackitdnsclient.CreateRecordSetPayload{
 		Name:    change.DNSName,
 		Records: records,
-		Ttl:     pointerTo(int32(change.RecordTTL)),
+		Ttl:     new(int32(change.RecordTTL)),
 		Type:    change.RecordType,
 	}
 }
@@ -95,7 +95,7 @@ func getStackitPartialUpdateRecordSetPayload(change *endpoint.Endpoint) stackitd
 	return stackitdnsclient.PartialUpdateRecordSetPayload{
 		Name:    &change.DNSName,
 		Records: records,
-		Ttl:     pointerTo(int32(change.RecordTTL)),
+		Ttl:     new(int32(change.RecordTTL)),
 	}
 }
 
@@ -108,9 +108,4 @@ func getLogFields(change *endpoint.Endpoint, action string, id string) []zap.Fie
 		zap.String("action", action),
 		zap.String("id", id),
 	}
-}
-
-// pointerTo returns a pointer to the given value.
-func pointerTo[T any](v T) *T {
-	return &v
 }

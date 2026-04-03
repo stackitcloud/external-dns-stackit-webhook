@@ -73,7 +73,7 @@ func TestGetStackitRRSetRecordPost(t *testing.T) {
 	}
 	expected := stackitdnsclient.CreateRecordSetPayload{
 		Name: "test.",
-		Ttl:  pointerTo(int32(300)),
+		Ttl:  new(int32(300)),
 		Type: "A",
 		Records: []stackitdnsclient.RecordPayload{
 			{
@@ -196,8 +196,8 @@ func TestGetStackitRRSetRecordPatch(t *testing.T) {
 	}
 
 	expected := stackitdnsclient.PartialUpdateRecordSetPayload{
-		Name: pointerTo("test."),
-		Ttl:  pointerTo(int32(300)),
+		Name: new("test."),
+		Ttl:  new(int32(300)),
 		Records: []stackitdnsclient.RecordPayload{
 			{
 				Content: "192.0.2.1",

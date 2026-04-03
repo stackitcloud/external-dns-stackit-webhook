@@ -375,7 +375,7 @@ func getValidResponseZoneAllBytes(t *testing.T) []byte {
 func getValidZoneResponseAll() stackitdnsclient.ListZonesResponse {
 	return stackitdnsclient.ListZonesResponse{
 		ItemsPerPage: int32(10),
-		Message:      pointerTo("success"),
+		Message:      new("success"),
 		TotalItems:   int32(2),
 		TotalPages:   int32(1),
 		Zones: []stackitdnsclient.Zone{
@@ -397,7 +397,7 @@ func getValidResponseRRSetAllBytes(t *testing.T) []byte {
 
 func getValidRecordSetResponse() stackitdnsclient.RecordSetResponse {
 	return stackitdnsclient.RecordSetResponse{
-		Message: pointerTo("success"),
+		Message: new("success"),
 		Rrset: stackitdnsclient.RecordSet{
 			Name: "test.com",
 			Type: "A",
@@ -412,7 +412,7 @@ func getValidRecordSetResponse() stackitdnsclient.RecordSetResponse {
 func getValidResponseRRSetAll() stackitdnsclient.ListRecordSetsResponse {
 	return stackitdnsclient.ListRecordSetsResponse{
 		ItemsPerPage: int32(20),
-		Message:      pointerTo("success"),
+		Message:      new("success"),
 		RrSets: []stackitdnsclient.RecordSet{
 			{
 				Name: "test.com",
