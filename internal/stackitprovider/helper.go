@@ -1,6 +1,7 @@
 package stackitprovider
 
 import (
+	"math"
 	"strings"
 
 	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
@@ -78,7 +79,7 @@ func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.Crea
 	return stackitdnsclient.CreateRecordSetPayload{
 		Name:    change.DNSName,
 		Records: records,
-		Ttl:     new(int32(change.RecordTTL)),
+		Ttl:     safeTTLToInt32(change.RecordTTL),
 		Type:    change.RecordType,
 	}
 }
@@ -95,7 +96,7 @@ func getStackitPartialUpdateRecordSetPayload(change *endpoint.Endpoint) stackitd
 	return stackitdnsclient.PartialUpdateRecordSetPayload{
 		Name:    &change.DNSName,
 		Records: records,
-		Ttl:     new(int32(change.RecordTTL)),
+		Ttl:     safeTTLToInt32(change.RecordTTL),
 	}
 }
 
@@ -108,4 +109,20 @@ func getLogFields(change *endpoint.Endpoint, action string, id string) []zap.Fie
 		zap.String("action", action),
 		zap.String("id", id),
 	}
+}
+
+// safeTTLToInt32 safely converts an endpoint.TTL (int64) to *int32, clamping to valid bounds.
+func safeTTLToInt32(ttl endpoint.TTL) *int32 {
+	var v int32
+
+	switch {
+	case int64(ttl) > math.MaxInt32:
+		v = math.MaxInt32
+	case int64(ttl) < 0:
+		v = 0
+	default:
+		v = int32(ttl) // #nosec G115 -- bounds checked above
+	}
+
+	return &v
 }
