@@ -28,7 +28,7 @@ jobs:
         with:
           go-version: stable
 
-      - uses: anchore/sbom-action/download-syft@78fc58e266e87a38d4194b2137a3d4e9bcaf7ca1 # v0.14.3
+      - uses: anchore/sbom-action/download-syft@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
 
       - name: Set Up Docker Buildx
         uses: docker/setup-buildx-action@v4
