@@ -8,7 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	metrics_collector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
+	metricscollector "github.com/stackitcloud/external-dns-stackit-webhook/pkg/metrics"
 )
 
 // registerAt registers the metrics endpoint.
@@ -16,7 +16,7 @@ func registerAt(app *fiber.App, path string) {
 	app.Get(path, adaptor.HTTPHandler(promhttp.Handler()))
 }
 
-func NewMetricsMiddleware(collector metrics_collector.HttpApiMetrics) fiber.Handler {
+func NewMetricsMiddleware(collector metricscollector.HttpApiMetrics) fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		started := time.Now()
 
@@ -40,7 +40,7 @@ func NewMetricsMiddleware(collector metrics_collector.HttpApiMetrics) fiber.Hand
 	}
 }
 
-func collectHttpStatusErrors(status int, collector metrics_collector.HttpApiMetrics) {
+func collectHttpStatusErrors(status int, collector metricscollector.HttpApiMetrics) {
 	if status >= 400 && status < 500 {
 		collector.Collect400TotalRequests()
 	} else if status >= 500 && status < 600 {

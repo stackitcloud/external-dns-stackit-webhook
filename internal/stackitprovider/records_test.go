@@ -8,7 +8,7 @@ import (
 
 	"github.com/goccy/go-json"
 	stackitconfig "github.com/stackitcloud/stackit-sdk-go/core/config"
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
@@ -110,11 +110,11 @@ func TestEmptyRRSetRouteRecords(t *testing.T) {
 			w.Header().Set("Content-Type", "application/json")
 
 			zones := stackitdnsclient.ListZonesResponse{
-				ItemsPerPage: pointerTo(int64(1)),
-				Message:      pointerTo("success"),
-				TotalItems:   pointerTo(int64(2)),
-				TotalPages:   pointerTo(int64(2)),
-				Zones:        &[]stackitdnsclient.Zone{{Id: pointerTo("1234")}},
+				ItemsPerPage: int32(1),
+				Message:      new("success"),
+				TotalItems:   int32(2),
+				TotalPages:   int32(2),
+				Zones:        []stackitdnsclient.Zone{{Id: "1234"}},
 			}
 			successResponseBytes, err := json.Marshal(zones)
 			assert.NoError(t, err)
@@ -212,20 +212,20 @@ func getZonesHandlerRecordsPaged(t *testing.T) http.HandlerFunc {
 		zones := stackitdnsclient.ListZonesResponse{}
 		if r.URL.Query().Get("page") == "1" {
 			zones = stackitdnsclient.ListZonesResponse{
-				ItemsPerPage: pointerTo(int64(1)),
-				Message:      pointerTo("success"),
-				TotalItems:   pointerTo(int64(2)),
-				TotalPages:   pointerTo(int64(2)),
-				Zones:        &[]stackitdnsclient.Zone{{Id: pointerTo("1234")}},
+				ItemsPerPage: int32(1),
+				Message:      new("success"),
+				TotalItems:   int32(2),
+				TotalPages:   int32(2),
+				Zones:        []stackitdnsclient.Zone{{Id: "1234"}},
 			}
 		}
 		if r.URL.Query().Get("page") == "2" {
 			zones = stackitdnsclient.ListZonesResponse{
-				ItemsPerPage: pointerTo(int64(1)),
-				Message:      pointerTo("success"),
-				TotalItems:   pointerTo(int64(2)),
-				TotalPages:   pointerTo(int64(2)),
-				Zones:        &[]stackitdnsclient.Zone{{Id: pointerTo("5678")}},
+				ItemsPerPage: int32(1),
+				Message:      new("success"),
+				TotalItems:   int32(2),
+				TotalPages:   int32(2),
+				Zones:        []stackitdnsclient.Zone{{Id: "5678"}},
 			}
 		}
 		successResponseBytes, err := json.Marshal(zones)
@@ -245,38 +245,38 @@ func getRrsetsHandlerReecodsPaged(t *testing.T, domain string) http.HandlerFunc 
 		rrSets := stackitdnsclient.ListRecordSetsResponse{}
 		if domain == "1234" {
 			rrSets = stackitdnsclient.ListRecordSetsResponse{
-				ItemsPerPage: pointerTo(int64(1)),
-				Message:      pointerTo("success"),
-				RrSets: &[]stackitdnsclient.RecordSet{
+				ItemsPerPage: int32(1),
+				Message:      new("success"),
+				RrSets: []stackitdnsclient.RecordSet{
 					{
-						Name: pointerTo("test.com."),
-						Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
-						Ttl:  pointerTo(int64(300)),
-						Records: &[]stackitdnsclient.Record{
-							{Content: pointerTo("1.2.3.4")},
+						Name: "test.com.",
+						Type: "A",
+						Ttl:  int32(300),
+						Records: []stackitdnsclient.Record{
+							{Content: "1.2.3.4"},
 						},
 					},
 				},
-				TotalItems: pointerTo(int64(1)),
-				TotalPages: pointerTo(int64(1)),
+				TotalItems: int32(1),
+				TotalPages: int32(1),
 			}
 		}
 		if domain == "5678" {
 			rrSets = stackitdnsclient.ListRecordSetsResponse{
-				ItemsPerPage: pointerTo(int64(1)),
-				Message:      pointerTo("success"),
-				RrSets: &[]stackitdnsclient.RecordSet{
+				ItemsPerPage: int32(1),
+				Message:      new("success"),
+				RrSets: []stackitdnsclient.RecordSet{
 					{
-						Name: pointerTo("test2.com."),
-						Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
-						Ttl:  pointerTo(int64(300)),
-						Records: &[]stackitdnsclient.Record{
-							{Content: pointerTo("5.6.7.8")},
+						Name: "test2.com.",
+						Type: "A",
+						Ttl:  int32(300),
+						Records: []stackitdnsclient.Record{
+							{Content: "5.6.7.8"},
 						},
 					},
 				},
-				TotalItems: pointerTo(int64(1)),
-				TotalPages: pointerTo(int64(1)),
+				TotalItems: int32(1),
+				TotalPages: int32(1),
 			}
 		}
 
@@ -307,13 +307,13 @@ func getZonesResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 
 	zones := stackitdnsclient.ListZonesResponse{
-		ItemsPerPage: pointerTo(int64(10)),
-		Message:      pointerTo("success"),
-		TotalItems:   pointerTo(int64(2)),
-		TotalPages:   pointerTo(int64(1)),
-		Zones: &[]stackitdnsclient.Zone{
-			{Id: pointerTo("1234"), DnsName: pointerTo("test.com")},
-			{Id: pointerTo("5678"), DnsName: pointerTo("test2.com")},
+		ItemsPerPage: int32(10),
+		Message:      new("success"),
+		TotalItems:   int32(2),
+		TotalPages:   int32(1),
+		Zones: []stackitdnsclient.Zone{
+			{Id: "1234", DnsName: "test.com"},
+			{Id: "5678", DnsName: "test2.com"},
 		},
 	}
 	successResponseBytes, err := json.Marshal(zones)
@@ -329,21 +329,21 @@ func getRrsetsResponseRecordsNonPaged(t *testing.T, w http.ResponseWriter, domai
 	w.Header().Set("Content-Type", "application/json")
 
 	var rrSets = stackitdnsclient.ListRecordSetsResponse{
-		ItemsPerPage: pointerTo(int64(20)),
-		Message:      pointerTo("success"),
-		RrSets: &[]stackitdnsclient.RecordSet{
+		ItemsPerPage: int32(20),
+		Message:      new("success"),
+		RrSets: []stackitdnsclient.RecordSet{
 			{
-				Name: pointerTo(domain),
-				Type: pointerTo(stackitdnsclient.RECORDSETTYPE_A),
-				Ttl:  pointerTo(int64(300)),
-				Records: &[]stackitdnsclient.Record{
-					{Content: pointerTo(record)},
+				Name: domain,
+				Type: "A",
+				Ttl:  int32(300),
+				Records: []stackitdnsclient.Record{
+					{Content: record},
 				},
-				Id: pointerTo(id),
+				Id: id,
 			},
 		},
-		TotalItems: pointerTo(int64(2)),
-		TotalPages: pointerTo(int64(1)),
+		TotalItems: int32(2),
+		TotalPages: int32(1),
 	}
 
 	successResponseBytes, err := json.Marshal(rrSets)

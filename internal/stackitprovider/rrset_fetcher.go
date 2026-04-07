@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 )
@@ -39,7 +39,7 @@ func (r *rrSetFetcher) fetchRecords(
 	var result []stackitdnsclient.RecordSet
 	var pager int32 = 1
 
-	listRequest := r.apiClient.ListRecordSets(ctx, r.projectId, zoneId).Page(pager).PageSize(10000).ActiveEq(true)
+	listRequest := r.apiClient.DefaultAPI.ListRecordSets(ctx, r.projectId, zoneId).Page(pager).PageSize(10000).ActiveEq(true)
 
 	if nameFilter != nil {
 		listRequest = listRequest.NameLike(*nameFilter)
@@ -50,17 +50,17 @@ func (r *rrSetFetcher) fetchRecords(
 		return nil, err
 	}
 
-	result = append(result, *rrSetResponse.RrSets...)
+	result = append(result, rrSetResponse.RrSets...)
 
 	// if there is more than one page, we need to loop over the other pages and
 	// issue another API request for each one of them
 	pager++
-	for int64(pager) <= *rrSetResponse.TotalPages {
+	for pager <= rrSetResponse.TotalPages {
 		rrSetResponse, err := listRequest.Page(pager).Execute()
 		if err != nil {
 			return nil, err
 		}
-		result = append(result, *rrSetResponse.RrSets...)
+		result = append(result, rrSetResponse.RrSets...)
 		pager++
 	}
 
@@ -83,7 +83,7 @@ func (r *rrSetFetcher) getRRSetForUpdateDeletion(
 		return nil, nil, fmt.Errorf("record set name contains no zone dns name")
 	}
 
-	domainRRSets, err := r.fetchRecords(ctx, *resultZone.Id, &change.DNSName)
+	domainRRSets, err := r.fetchRecords(ctx, resultZone.Id, &change.DNSName)
 	if err != nil {
 		return nil, nil, err
 	}

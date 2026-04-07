@@ -1,9 +1,10 @@
 package stackitprovider
 
 import (
+	"math"
 	"strings"
 
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 )
@@ -20,10 +21,7 @@ func findBestMatchingZone(
 
 	for i := range zones {
 		zone := &zones[i]
-		if zone.DnsName == nil {
-			continue
-		}
-		if l := len(*zone.DnsName); l > count && strings.Contains(rrSetName, *zone.DnsName) {
+		if l := len(zone.DnsName); l > count && strings.Contains(rrSetName, zone.DnsName) {
 			count = l
 			domainZone = zone
 		}
@@ -43,10 +41,7 @@ func findRRSet(
 ) (*stackitdnsclient.RecordSet, bool) {
 	for i := range rrSets {
 		rrSet := &rrSets[i]
-		if rrSet.Name == nil || rrSet.Type == nil {
-			continue
-		}
-		if *rrSet.Name == rrSetName && string(*rrSet.Type) == recordType {
+		if rrSet.Name == rrSetName && rrSet.Type == recordType {
 			return rrSet, true
 		}
 	}
@@ -77,15 +72,15 @@ func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.Crea
 	records := make([]stackitdnsclient.RecordPayload, len(change.Targets))
 	for i := range change.Targets {
 		records[i] = stackitdnsclient.RecordPayload{
-			Content: &change.Targets[i],
+			Content: change.Targets[i],
 		}
 	}
 
 	return stackitdnsclient.CreateRecordSetPayload{
-		Name:    &change.DNSName,
-		Records: &records,
-		Ttl:     pointerTo(int64(change.RecordTTL)),
-		Type:    (stackitdnsclient.CreateRecordSetPayloadGetTypeAttributeType)(&change.RecordType),
+		Name:    change.DNSName,
+		Records: records,
+		Ttl:     safeTTLToInt32(change.RecordTTL),
+		Type:    change.RecordType,
 	}
 }
 
@@ -94,14 +89,14 @@ func getStackitPartialUpdateRecordSetPayload(change *endpoint.Endpoint) stackitd
 	records := make([]stackitdnsclient.RecordPayload, len(change.Targets))
 	for i := range change.Targets {
 		records[i] = stackitdnsclient.RecordPayload{
-			Content: &change.Targets[i],
+			Content: change.Targets[i],
 		}
 	}
 
 	return stackitdnsclient.PartialUpdateRecordSetPayload{
 		Name:    &change.DNSName,
-		Records: &records,
-		Ttl:     pointerTo(int64(change.RecordTTL)),
+		Records: records,
+		Ttl:     safeTTLToInt32(change.RecordTTL),
 	}
 }
 
@@ -116,7 +111,18 @@ func getLogFields(change *endpoint.Endpoint, action string, id string) []zap.Fie
 	}
 }
 
-// pointerTo returns a pointer to the given value.
-func pointerTo[T any](v T) *T {
+// safeTTLToInt32 safely converts an endpoint.TTL (int64) to *int32, clamping to valid bounds.
+func safeTTLToInt32(ttl endpoint.TTL) *int32 {
+	var v int32
+
+	switch {
+	case int64(ttl) > math.MaxInt32:
+		v = math.MaxInt32
+	case int64(ttl) < 0:
+		v = 0
+	default:
+		v = int32(ttl) // #nosec G115 -- bounds checked above
+	}
+
 	return &v
 }

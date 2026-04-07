@@ -2,7 +2,7 @@ package stackitprovider
 
 import (
 	stackitconfig "github.com/stackitcloud/stackit-sdk-go/core/config"
-	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns"
+	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
 	"sigs.k8s.io/external-dns/provider"

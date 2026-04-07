@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 
 	"github.com/stackitcloud/external-dns-stackit-webhook/pkg/api"
-	mock_provider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
+	mockprovider "github.com/stackitcloud/external-dns-stackit-webhook/pkg/api/mock"
 )
 
 func TestWebhook_AdjustEndpoints(t *testing.T) {
@@ -24,7 +24,7 @@ func TestWebhook_AdjustEndpoints(t *testing.T) {
 	t.Cleanup(ctrl.Finish)
 
 	mockLogger := zap.NewNop()
-	mockProvider := mock_provider.NewMockProvider(ctrl)
+	mockProvider := mockprovider.NewMockProvider(ctrl)
 	mockMetricsCollector := getTestMockMetricsCollector(ctrl)
 
 	app := api.New(mockLogger, mockMetricsCollector, mockProvider)
