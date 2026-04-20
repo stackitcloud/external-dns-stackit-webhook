@@ -10,8 +10,8 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
-	github.com/stackitcloud/stackit-sdk-go/core v0.24.1
-  github.com/stackitcloud/stackit-sdk-go/services/dns v0.19.2
+	github.com/stackitcloud/stackit-sdk-go/core v0.25.0
+	github.com/stackitcloud/stackit-sdk-go/services/dns v0.20.1
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.1
