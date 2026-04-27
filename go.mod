@@ -5,13 +5,13 @@ go 1.26.0
 require (
 	github.com/goccy/go-json v0.10.6
 	github.com/gofiber/adaptor/v2 v2.2.1
-	github.com/gofiber/fiber/v2 v2.52.12
+	github.com/gofiber/fiber/v2 v2.52.13
 	github.com/prometheus/client_golang v1.23.2
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 	github.com/spf13/viper v1.21.0
 	github.com/stackitcloud/stackit-sdk-go/core v0.24.1
-  github.com/stackitcloud/stackit-sdk-go/services/dns v0.19.2
+	github.com/stackitcloud/stackit-sdk-go/services/dns v0.19.2
 	github.com/stretchr/testify v1.11.1
 	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.1
