@@ -114,7 +114,12 @@ func endpointsFromRecords(name, recordType string, ttl endpoint.TTL, records []s
 	for i := range records {
 		rec := &records[i]
 
-		endpoints = append(endpoints, endpoint.NewEndpointWithTTL(name, recordType, ttl, rec.Content))
+		content := rec.Content
+		if recordType == "TXT" {
+			content = unformatTXTContent(content)
+		}
+
+		endpoints = append(endpoints, endpoint.NewEndpointWithTTL(name, recordType, ttl, content))
 	}
 
 	return endpoints

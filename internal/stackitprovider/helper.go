@@ -71,8 +71,14 @@ func modifyChange(change *endpoint.Endpoint) {
 func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.CreateRecordSetPayload {
 	records := make([]stackitdnsclient.RecordPayload, len(change.Targets))
 	for i := range change.Targets {
+		content := change.Targets[i]
+
+		if change.RecordType == "TXT" {
+			content = formatTXTContent(content)
+		}
+
 		records[i] = stackitdnsclient.RecordPayload{
-			Content: change.Targets[i],
+			Content: content,
 		}
 	}
 
@@ -88,8 +94,14 @@ func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.Crea
 func getStackitPartialUpdateRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.PartialUpdateRecordSetPayload {
 	records := make([]stackitdnsclient.RecordPayload, len(change.Targets))
 	for i := range change.Targets {
+		content := change.Targets[i]
+
+		if change.RecordType == "TXT" {
+			content = formatTXTContent(content)
+		}
+
 		records[i] = stackitdnsclient.RecordPayload{
-			Content: change.Targets[i],
+			Content: content,
 		}
 	}
 
@@ -125,4 +137,34 @@ func safeTTLToInt32(ttl endpoint.TTL) *int32 {
 	}
 
 	return &v
+}
+
+// formatTXTContent splits long TXT records into 255-character chunks separated by spaces
+func formatTXTContent(content string) string {
+	cleanContent := strings.Trim(content, "\"")
+
+	if len(cleanContent) <= 255 {
+		return `"` + cleanContent + `"`
+	}
+
+	var chunks []string
+	for i := 0; i < len(cleanContent); i += 255 {
+		end := i + 255
+		if end > len(cleanContent) {
+			end = len(cleanContent)
+		}
+		chunks = append(chunks, `"`+cleanContent[i:end]+`"`)
+	}
+
+	return strings.Join(chunks, " ")
+}
+
+// unformatTXTContent reverses the DNS chunking and quoting process
+func unformatTXTContent(content string) string {
+	if !strings.HasPrefix(content, "\"") || !strings.HasSuffix(content, "\"") {
+		return content
+	}
+
+	trimmed := content[1 : len(content)-1]
+	return strings.ReplaceAll(trimmed, `" "`, "")
 }
