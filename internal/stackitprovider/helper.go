@@ -73,7 +73,7 @@ func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.Crea
 	for i := range change.Targets {
 		content := change.Targets[i]
 
-		if change.RecordType == "TXT" {
+		if change.RecordType == txtRecord {
 			content = formatTXTContent(content)
 		}
 
@@ -96,7 +96,7 @@ func getStackitPartialUpdateRecordSetPayload(change *endpoint.Endpoint) stackitd
 	for i := range change.Targets {
 		content := change.Targets[i]
 
-		if change.RecordType == "TXT" {
+		if change.RecordType == txtRecord {
 			content = formatTXTContent(content)
 		}
 
@@ -139,7 +139,7 @@ func safeTTLToInt32(ttl endpoint.TTL) *int32 {
 	return &v
 }
 
-// formatTXTContent splits long TXT records into 255-character chunks separated by spaces
+// formatTXTContent splits long TXT records into 255-character chunks separated by spaces.
 func formatTXTContent(content string) string {
 	cleanContent := strings.Trim(content, "\"")
 
@@ -159,12 +159,13 @@ func formatTXTContent(content string) string {
 	return strings.Join(chunks, " ")
 }
 
-// unformatTXTContent reverses the DNS chunking and quoting process
+// unformatTXTContent reverses the DNS chunking and quoting process.
 func unformatTXTContent(content string) string {
 	if !strings.HasPrefix(content, "\"") || !strings.HasSuffix(content, "\"") {
 		return content
 	}
 
 	trimmed := content[1 : len(content)-1]
+
 	return strings.ReplaceAll(trimmed, `" "`, "")
 }
