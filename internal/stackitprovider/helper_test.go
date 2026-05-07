@@ -2,6 +2,7 @@ package stackitprovider
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
@@ -212,5 +213,97 @@ func TestGetStackitRRSetRecordPatch(t *testing.T) {
 
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("getStackitRRSetRecordPatch() = %v, want %v", got, expected)
+	}
+}
+
+func TestFormatTXTContent(t *testing.T) {
+	t.Parallel()
+
+	// Generate strings of exact lengths for testing
+	string255 := strings.Repeat("a", 255)
+	string256 := strings.Repeat("a", 256)
+	string511 := strings.Repeat("a", 511)
+
+	tests := []struct {
+		name    string
+		content string
+		want    string
+	}{
+		{
+			name:    "Short string without quotes",
+			content: "hello world",
+			want:    `"hello world"`,
+		},
+		{
+			name:    "Short string with existing quotes",
+			content: `"hello world"`,
+			want:    `"hello world"`,
+		},
+		{
+			name:    "Exactly 255 characters",
+			content: string255,
+			want:    `"` + string255 + `"`,
+		},
+		{
+			name:    "256 characters (requires 2 chunks)",
+			content: string256,
+			want:    `"` + string255 + `" "a"`,
+		},
+		{
+			name:    "511 characters (requires 3 chunks)",
+			content: string511,
+			want:    `"` + string255 + `" "` + string255 + `" "a"`,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := formatTXTContent(tt.content); got != tt.want {
+				t.Errorf("formatTXTContent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUnformatTXTContent(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		content string
+		want    string
+	}{
+		{
+			name:    "Unquoted short string",
+			content: "hello world",
+			want:    "hello world",
+		},
+		{
+			name:    "Single chunk quoted string",
+			content: `"hello world"`,
+			want:    "hello world",
+		},
+		{
+			name:    "Two chunk string",
+			content: `"hello" "world"`,
+			want:    "helloworld",
+		},
+		{
+			name:    "Three chunk string",
+			content: `"chunk1" "chunk2" "chunk3"`,
+			want:    "chunk1chunk2chunk3",
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			if got := unformatTXTContent(tt.content); got != tt.want {
+				t.Errorf("unformatTXTContent() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }
