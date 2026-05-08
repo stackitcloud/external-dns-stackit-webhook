@@ -232,7 +232,7 @@ func TestFormatTXTContent(t *testing.T) {
 		{
 			name:    "Short string without quotes",
 			content: "hello world",
-			want:    `"hello world"`,
+			want:    "hello world",
 		},
 		{
 			name:    "Short string with existing quotes",
@@ -240,8 +240,13 @@ func TestFormatTXTContent(t *testing.T) {
 			want:    `"hello world"`,
 		},
 		{
-			name:    "Exactly 255 characters",
+			name:    "Exactly 255 characters unquoted",
 			content: string255,
+			want:    string255,
+		},
+		{
+			name:    "Exactly 255 characters quoted",
+			content: `"` + string255 + `"`,
 			want:    `"` + string255 + `"`,
 		},
 		{
@@ -283,17 +288,17 @@ func TestUnformatTXTContent(t *testing.T) {
 		{
 			name:    "Single chunk quoted string",
 			content: `"hello world"`,
-			want:    "hello world",
+			want:    `"hello world"`,
 		},
 		{
 			name:    "Two chunk string",
 			content: `"hello" "world"`,
-			want:    "helloworld",
+			want:    `"helloworld"`,
 		},
 		{
 			name:    "Three chunk string",
 			content: `"chunk1" "chunk2" "chunk3"`,
-			want:    "chunk1chunk2chunk3",
+			want:    `"chunk1chunk2chunk3"`,
 		},
 	}
 

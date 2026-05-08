@@ -141,10 +141,10 @@ func safeTTLToInt32(ttl endpoint.TTL) *int32 {
 
 // formatTXTContent splits long TXT records into 255-character chunks separated by spaces.
 func formatTXTContent(content string) string {
-	cleanContent := strings.Trim(content, "\"")
+	cleanContent := strings.Trim(content, `"`)
 
 	if len(cleanContent) <= 255 {
-		return `"` + cleanContent + `"`
+		return content
 	}
 
 	var chunks []string
@@ -161,11 +161,9 @@ func formatTXTContent(content string) string {
 
 // unformatTXTContent reverses the DNS chunking and quoting process.
 func unformatTXTContent(content string) string {
-	if !strings.HasPrefix(content, "\"") || !strings.HasSuffix(content, "\"") {
-		return content
+	if strings.Contains(content, `" "`) {
+		return strings.ReplaceAll(content, `" "`, ``)
 	}
 
-	trimmed := content[1 : len(content)-1]
-
-	return strings.ReplaceAll(trimmed, `" "`, "")
+	return content
 }
