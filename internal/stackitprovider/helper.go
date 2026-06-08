@@ -41,7 +41,7 @@ func findRRSet(
 ) (*stackitdnsclient.RecordSet, bool) {
 	for i := range rrSets {
 		rrSet := &rrSets[i]
-		if rrSet.Name == rrSetName && rrSet.Type == recordType {
+		if rrSet.Name == rrSetName && string(rrSet.Type) == recordType {
 			return rrSet, true
 		}
 	}
@@ -86,7 +86,7 @@ func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.Crea
 		Name:    change.DNSName,
 		Records: records,
 		Ttl:     safeTTLToInt32(change.RecordTTL),
-		Type:    change.RecordType,
+		Type:    stackitdnsclient.CreateRecordSetPayloadType(change.RecordType),
 	}
 }
 
