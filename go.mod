@@ -1,6 +1,6 @@
 module github.com/stackitcloud/external-dns-stackit-webhook
 
-go 1.26.1
+go 1.26.4
 
 require (
 	github.com/goccy/go-json v0.10.6
