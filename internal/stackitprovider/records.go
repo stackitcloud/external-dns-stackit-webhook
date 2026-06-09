@@ -107,7 +107,7 @@ func recordSetCoreFields(r *stackitdnsclient.RecordSet) (name string, recordType
 		return "", "", 0, nil, false
 	}
 
-	return r.Name, r.Type, endpoint.TTL(r.Ttl), r.Records, true
+	return r.Name, string(r.Type), endpoint.TTL(r.Ttl), r.Records, true
 }
 
 func endpointsFromRecords(name, recordType string, ttl endpoint.TTL, records []stackitdnsclient.Record) []*endpoint.Endpoint {
