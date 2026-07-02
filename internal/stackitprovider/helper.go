@@ -7,6 +7,7 @@ import (
 	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
 	"go.uber.org/zap"
 	"sigs.k8s.io/external-dns/endpoint"
+	"sigs.k8s.io/external-dns/provider"
 )
 
 // findBestMatchingZone finds the best matching zone for a given record set name. The criteria are
@@ -49,18 +50,16 @@ func findRRSet(
 	return nil, false
 }
 
-// appendDotIfNotExists appends a dot to the end of a string if it doesn't already end with a dot.
-func appendDotIfNotExists(s string) string {
-	if !strings.HasSuffix(s, ".") {
-		return s + "."
-	}
-
-	return s
-}
-
 // modifyChange modifies a change to ensure it is valid for this stackitprovider.
 func modifyChange(change *endpoint.Endpoint) {
-	change.DNSName = appendDotIfNotExists(change.DNSName)
+	change.DNSName = provider.EnsureTrailingDot(change.DNSName)
+
+	switch change.RecordType {
+	case endpoint.RecordTypeCNAME, endpoint.RecordTypeMX, endpoint.RecordTypeSRV, endpoint.RecordTypeNS:
+		for i := range change.Targets {
+			change.Targets[i] = provider.EnsureTrailingDot(change.Targets[i])
+		}
+	}
 
 	if change.RecordTTL == 0 {
 		change.RecordTTL = 300
@@ -73,7 +72,7 @@ func getStackitRecordSetPayload(change *endpoint.Endpoint) stackitdnsclient.Crea
 	for i := range change.Targets {
 		content := change.Targets[i]
 
-		if change.RecordType == txtRecord {
+		if change.RecordType == endpoint.RecordTypeTXT {
 			content = formatTXTContent(content)
 		}
 
@@ -96,7 +95,7 @@ func getStackitPartialUpdateRecordSetPayload(change *endpoint.Endpoint) stackitd
 	for i := range change.Targets {
 		content := change.Targets[i]
 
-		if change.RecordType == txtRecord {
+		if change.RecordType == endpoint.RecordTypeTXT {
 			content = formatTXTContent(content)
 		}
 

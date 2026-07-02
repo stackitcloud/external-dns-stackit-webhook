@@ -10,29 +10,6 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
-func TestAppendDotIfNotExists(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name string
-		s    string
-		want string
-	}{
-		{"No dot at end", "test", "test."},
-		{"Dot at end", "test.", "test."},
-	}
-	for _, tt := range tests {
-		tt := tt
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			if got := appendDotIfNotExists(tt.s); got != tt.want {
-				t.Errorf("appendDotIfNotExists() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 func TestModifyChange(t *testing.T) {
 	t.Parallel()
 
@@ -57,6 +34,43 @@ func TestModifyChange(t *testing.T) {
 	}
 	if endpointWithoutTTL.RecordTTL != 300 {
 		t.Errorf("modifyChange() did not set default RecordTTL = %v, want 300", endpointWithoutTTL.RecordTTL)
+	}
+
+	// Hostname-valued record types get a trailing dot appended to every target,
+	// leaving already-dotted targets untouched.
+	dottedTargetTests := []struct {
+		recordType string
+		targets    endpoint.Targets
+		want       endpoint.Targets
+	}{
+		{"CNAME", endpoint.Targets{"foo.mydomain.com", "bar.mydomain.com."}, endpoint.Targets{"foo.mydomain.com.", "bar.mydomain.com."}},
+		{"MX", endpoint.Targets{"10 mail.mydomain.com"}, endpoint.Targets{"10 mail.mydomain.com."}},
+		{"SRV", endpoint.Targets{"0 5 5060 sip.mydomain.com"}, endpoint.Targets{"0 5 5060 sip.mydomain.com."}},
+		{"NS", endpoint.Targets{"ns1.mydomain.com", "ns2.mydomain.com."}, endpoint.Targets{"ns1.mydomain.com.", "ns2.mydomain.com."}},
+	}
+	for _, tt := range dottedTargetTests {
+		ep := &endpoint.Endpoint{
+			DNSName:    "test.mydomain.com",
+			RecordType: tt.recordType,
+			Targets:    tt.targets,
+		}
+		modifyChange(ep)
+		for i := range tt.want {
+			if ep.Targets[i] != tt.want[i] {
+				t.Errorf("modifyChange() %s target[%d] = %v, want %v", tt.recordType, i, ep.Targets[i], tt.want[i])
+			}
+		}
+	}
+
+	// A records keep their IP targets untouched.
+	nonHostnameEndpoint := &endpoint.Endpoint{
+		DNSName:    "test.mydomain.com",
+		RecordType: "A",
+		Targets:    endpoint.Targets{"1.2.3.4"},
+	}
+	modifyChange(nonHostnameEndpoint)
+	if nonHostnameEndpoint.Targets[0] != "1.2.3.4" {
+		t.Errorf("modifyChange() changed A target = %v, want 1.2.3.4", nonHostnameEndpoint.Targets[0])
 	}
 }
 

@@ -8,8 +8,6 @@ import (
 	"sigs.k8s.io/external-dns/provider"
 )
 
-const txtRecord = "TXT"
-
 // Records returns resource records.
 func (d *StackitDNSProvider) Records(ctx context.Context) ([]*endpoint.Endpoint, error) {
 	zones, err := d.zoneFetcherClient.zones(ctx)
@@ -117,7 +115,7 @@ func endpointsFromRecords(name, recordType string, ttl endpoint.TTL, records []s
 		rec := &records[i]
 
 		content := rec.Content
-		if recordType == txtRecord {
+		if recordType == endpoint.RecordTypeTXT {
 			content = unformatTXTContent(content)
 		}
 
