@@ -1,4 +1,4 @@
-GOLANGCI_VERSION = 2.10.1
+GOLANGCI_VERSION = 2.12.2
 LICENCES_IGNORE_LIST = $(shell cat licenses/licenses-ignore-list.txt)
 
 VERSION ?= 0.0.1
@@ -31,7 +31,7 @@ mocks:
 
 GOLANGCI_LINT = bin/golangci-lint-$(GOLANGCI_VERSION)
 $(GOLANGCI_LINT):
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | bash -s -- -b bin v$(GOLANGCI_VERSION)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/main/install.sh | bash -s -- -b bin v$(GOLANGCI_VERSION)
 	@mv bin/golangci-lint "$(@)"
 
 lint: $(GOLANGCI_LINT) download
