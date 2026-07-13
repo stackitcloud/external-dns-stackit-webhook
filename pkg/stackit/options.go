@@ -36,12 +36,9 @@ func SetConfigOptions(baseURL, bearerToken, keyPath, tokenURL string) ([]stackit
 	if bearerTokenSet {
 		return append(options, stackitconfig.WithToken(bearerToken)), nil
 	}
-
 	if len(tokenURL) > 0 {
 		options = append(options, stackitconfig.WithTokenEndpoint(tokenURL))
 	}
-
 	options = append(options, stackitconfig.WithBackgroundTokenRefresh(context.Background()))
-
 	return append(options, stackitconfig.WithServiceAccountKeyPath(keyPath)), nil
 }
