@@ -1,6 +1,7 @@
 package stackit
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"time"
@@ -13,7 +14,7 @@ import (
 // passed bearerToken and keyPath parameters. If no baseURL or an invalid
 // combination of auth options is given (neither or both), the function returns
 // an error.
-func SetConfigOptions(baseURL, bearerToken, keyPath string) ([]stackitconfig.ConfigurationOption, error) {
+func SetConfigOptions(baseURL, bearerToken, keyPath, tokenURL string) ([]stackitconfig.ConfigurationOption, error) {
 	if len(baseURL) == 0 {
 		return nil, fmt.Errorf("base-url is required")
 	}
@@ -35,6 +36,12 @@ func SetConfigOptions(baseURL, bearerToken, keyPath string) ([]stackitconfig.Con
 	if bearerTokenSet {
 		return append(options, stackitconfig.WithToken(bearerToken)), nil
 	}
+
+	if len(tokenURL) > 0 {
+		options = append(options, stackitconfig.WithTokenEndpoint(tokenURL))
+	}
+
+	options = append(options, stackitconfig.WithBackgroundTokenRefresh(context.Background()))
 
 	return append(options, stackitconfig.WithServiceAccountKeyPath(keyPath)), nil
 }
