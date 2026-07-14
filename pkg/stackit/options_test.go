@@ -45,3 +45,11 @@ func TestKeyPathSet(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Len(t, options, 4)
 }
+
+func TestKeyPathAndURLSet(t *testing.T) {
+	t.Parallel()
+
+	options, err := SetConfigOptions("https://example.com", "", "key/path", "https://alternative.url.stackit.cloud/token")
+	assert.NoError(t, err)
+	assert.Len(t, options, 5)
+}

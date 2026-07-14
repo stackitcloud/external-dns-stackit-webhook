@@ -2,6 +2,7 @@ package stackitprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -72,6 +73,7 @@ func splitTXTAndOther(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, []*
 			other = append(other, ep)
 		}
 	}
+
 	return txt, other
 }
 
@@ -122,9 +124,9 @@ func (d *StackitDNSProvider) handleRRSetWithWorkers(
 	for i := 0; i < len(tasks); i++ {
 		err := <-errorChannel
 		if err != nil && firstErr == nil {
-			if err != context.Canceled {
+			if !errors.Is(err, context.Canceled) {
 				firstErr = err
-				d.logger.Error("error encountered during batch processing, cancelling remaining tasks", zap.Error(err))
+				d.logger.Error("error encountered during batch processing, canceling remaining tasks", zap.Error(err))
 				// Fail fast: signal all active and pending workers to abort.
 				cancel()
 			}
@@ -152,6 +154,7 @@ func (d *StackitDNSProvider) changeWorker(
 		// Check for context cancellation before processing the next task.
 		if err := ctx.Err(); err != nil {
 			errorChannel <- err
+
 			continue
 		}
 
