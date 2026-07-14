@@ -2,6 +2,7 @@ package stackitprovider
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -11,31 +12,72 @@ import (
 	"sigs.k8s.io/external-dns/plan"
 )
 
-// ApplyChanges applies a given set of changes in a given zone.
+// ApplyChanges applies a given set of DNS changes to the STACKIT DNS API.
+// It enforces a strict phase-based execution order to prevent orphaned records
+// and mitigate quota limit issues (e.g., max 10k records per zone).
+// Deletions are processed before creations to free up zone quota.
 func (d *StackitDNSProvider) ApplyChanges(ctx context.Context, changes *plan.Changes) error {
-	// Preallocate to avoid repeated growth (prealloc)
-	totalTasks := len(changes.Create) + len(changes.UpdateNew) + len(changes.Delete)
-	tasks := make([]changeTask, 0, totalTasks)
-
-	// create rr set. POST /v1/projects/{projectId}/zones/{zoneId}/rrsets
-	tasks = append(tasks, d.buildRRSetTasks(changes.Create, CREATE)...)
-	// update rr set. PATCH /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
-	tasks = append(tasks, d.buildRRSetTasks(changes.UpdateNew, UPDATE)...)
+	if len(changes.Create)+len(changes.UpdateNew)+len(changes.Delete) == 0 {
+		return nil
+	}
 
 	d.logger.Info("records to delete", zap.String("records", fmt.Sprintf("%v", changes.Delete)))
-
-	// delete rr set. DELETE /v1/projects/{projectId}/zones/{zoneId}/rrsets/{rrSetId}
-	tasks = append(tasks, d.buildRRSetTasks(changes.Delete, DELETE)...)
 
 	zones, err := d.zoneFetcherClient.zones(ctx)
 	if err != nil {
 		return err
 	}
 
-	return d.handleRRSetWithWorkers(ctx, tasks, zones)
+	// Separate ownership records (TXT) from target records (A, CNAME, etc.)
+	// to enforce strict dependency ordering and prevent orphaned records.
+	deleteTXT, deleteOther := splitTXTAndOther(changes.Delete)
+	updateTXT, updateOther := splitTXTAndOther(changes.UpdateNew)
+	createTXT, createOther := splitTXTAndOther(changes.Create)
+
+	// Execution order is critical.
+	// 1. Delete targets first, then their TXT ownership records.
+	// 2. Update TXT ownerships, then targets.
+	// 3. Create TXT ownerships first, then create targets.
+	batches := [][]changeTask{
+		d.buildRRSetTasks(deleteOther, DELETE),
+		d.buildRRSetTasks(deleteTXT, DELETE),
+		d.buildRRSetTasks(updateTXT, UPDATE),
+		d.buildRRSetTasks(updateOther, UPDATE),
+		d.buildRRSetTasks(createTXT, CREATE),
+		d.buildRRSetTasks(createOther, CREATE),
+	}
+
+	for _, batch := range batches {
+		if len(batch) == 0 {
+			continue
+		}
+
+		// If any batch fails (e.g., hitting a quota limit), the entire sync loop aborts.
+		// This leaves the DNS state consistent for the next retry attempt.
+		if err := d.handleRRSetWithWorkers(ctx, batch, zones); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-// handleRRSetWithWorkers handles the given endpoints with workers to optimize speed.
+// splitTXTAndOther separates TXT records from all other record types.
+// External-DNS relies on TXT records to track ownership.
+func splitTXTAndOther(endpoints []*endpoint.Endpoint) ([]*endpoint.Endpoint, []*endpoint.Endpoint) {
+	var txt, other []*endpoint.Endpoint
+	for _, ep := range endpoints {
+		if ep.RecordType == "TXT" {
+			txt = append(txt, ep)
+		} else {
+			other = append(other, ep)
+		}
+	}
+
+	return txt, other
+}
+
+// buildRRSetTasks wraps endpoint changes into executable tasks for the worker pool.
 func (d *StackitDNSProvider) buildRRSetTasks(
 	endpoints []*endpoint.Endpoint,
 	action string,
@@ -52,19 +94,25 @@ func (d *StackitDNSProvider) buildRRSetTasks(
 	return tasks
 }
 
-// handleRRSetWithWorkers handles the given endpoints with workers to optimize speed.
+// handleRRSetWithWorkers processes a batch of DNS changes concurrently.
+// It implements a fail-fast mechanism: if any worker encounters an error
+// (like a 4xx quota limit reached), it cancels the context to stop remaining queued tasks,
+// preventing an API DoS.
 func (d *StackitDNSProvider) handleRRSetWithWorkers(
 	ctx context.Context,
 	tasks []changeTask,
 	zones []stackitdnsclient.Zone,
 ) error {
+	cancelCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	workerChannel := make(chan changeTask, len(tasks))
 	errorChannel := make(chan error, len(tasks))
 
 	var wg sync.WaitGroup
 	for i := 0; i < d.workers; i++ {
 		wg.Add(1)
-		go d.changeWorker(ctx, workerChannel, errorChannel, zones, &wg)
+		go d.changeWorker(cancelCtx, workerChannel, errorChannel, zones, &wg)
 	}
 
 	for _, task := range tasks {
@@ -72,32 +120,44 @@ func (d *StackitDNSProvider) handleRRSetWithWorkers(
 	}
 	close(workerChannel)
 
-	// capture first error
-	var err error
+	var firstErr error
 	for i := 0; i < len(tasks); i++ {
-		err = <-errorChannel
-		if err != nil {
-			break
+		err := <-errorChannel
+		if err != nil && firstErr == nil {
+			if !errors.Is(err, context.Canceled) {
+				firstErr = err
+				d.logger.Error("error encountered during batch processing, canceling remaining tasks", zap.Error(err))
+				// Fail fast: signal all active and pending workers to abort.
+				cancel()
+			}
 		}
 	}
 
 	// wait until all workers have finished
 	wg.Wait()
 
-	return err
+	return firstErr
 }
 
-// changeWorker is a worker that handles changes passed by a channel.
+// changeWorker listens for tasks on the workerChannel and executes the appropriate API call.
+// It respects context cancellation to safely abort pending operations.
 func (d *StackitDNSProvider) changeWorker(
 	ctx context.Context,
-	changes chan changeTask,
-	errorChannel chan error,
+	changes <-chan changeTask,
+	errorChannel chan<- error,
 	zones []stackitdnsclient.Zone,
 	wg *sync.WaitGroup,
 ) {
 	defer wg.Done()
 
 	for change := range changes {
+		// Check for context cancellation before processing the next task.
+		if err := ctx.Err(); err != nil {
+			errorChannel <- err
+
+			continue
+		}
+
 		var err error
 		switch change.action {
 		case CREATE:

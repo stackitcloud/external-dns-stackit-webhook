@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"sync/atomic"
 	"testing"
 
 	stackitdnsclient "github.com/stackitcloud/stackit-sdk-go/services/dns/v1api"
@@ -196,6 +197,52 @@ func TestPartialUpdate(t *testing.T) {
 	err = stackitDnsProvider.ApplyChanges(ctx, changes)
 	assert.Error(t, err)
 	assert.True(t, rrSetUpdated, "rrset was not updated")
+}
+
+func TestFailFastCancellation(t *testing.T) {
+	t.Parallel()
+	ctx := context.Background()
+
+	validZoneResponse := getValidResponseZoneAllBytes(t)
+
+	var requestCount atomic.Int32
+	mux := http.NewServeMux()
+	server := httptest.NewServer(mux)
+	defer server.Close()
+
+	setUpCommonEndpoints(mux, validZoneResponse, http.StatusOK)
+
+	mux.HandleFunc("/v1/projects/1234/zones/1234/rrsets", func(w http.ResponseWriter, r *http.Request) {
+		requestCount.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		// Force the first requests to fail with a quota-like error
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		w.Write([]byte(`{"message": "quota exceeded"}`))
+	})
+
+	stackitDnsProvider, err := getDefaultTestProvider(server)
+	assert.NoError(t, err)
+
+	// Create a large batch of changes to ensure the queue fills up and tests the cancellation
+	endpoints := make([]*endpoint.Endpoint, 0, 50)
+	for i := 0; i < 50; i++ {
+		endpoints = append(endpoints, &endpoint.Endpoint{
+			DNSName:    fmt.Sprintf("test%d.com", i),
+			Targets:    endpoint.Targets{"1.2.3.4"},
+			RecordType: "A",
+		})
+	}
+
+	changes := &plan.Changes{
+		Create: endpoints,
+	}
+
+	err = stackitDnsProvider.ApplyChanges(ctx, changes)
+	assert.Error(t, err)
+
+	// If fail-fast is working, the request count should be significantly less than 50
+	// because the context cancellation stops the remaining workers from executing HTTP requests.
+	assert.Less(t, int(requestCount.Load()), 50, "expected fail-fast to cancel remaining requests")
 }
 
 // setUpCommonEndpoints for all change types.

@@ -231,6 +231,7 @@ Below are the options that are available.
 - `--auth-key-path`/`AUTH_KEY_PATH` (required): Defines the file path of the service account key for the STACKIT API.
   Prefer using a Kubernetes Secret mounted as a file and set `AUTH_KEY_PATH` to the in-container path
   (e.g. `/var/run/secrets/stackit/sa.json`).
+- `--token-url`/`TOKEN_URL` (optional): Specifies alternative URL for authentication with service account key (default "https://service-account.api.stackit.cloud/token").
 - `--worker`/`WORKER`  (optional): Specifies the number of workers to employ for querying the API. Given that we
   need to iterate over all zones and records, it can be parallelized. However, it is important to avoid
   setting this number excessively high to prevent receiving 429 rate limiting from the API (default 10).

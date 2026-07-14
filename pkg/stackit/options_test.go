@@ -9,7 +9,7 @@ import (
 func TestMissingBaseURL(t *testing.T) {
 	t.Parallel()
 
-	options, err := SetConfigOptions("", "", "")
+	options, err := SetConfigOptions("", "", "", "")
 	assert.ErrorContains(t, err, "base-url")
 	assert.Nil(t, options)
 }
@@ -17,7 +17,7 @@ func TestMissingBaseURL(t *testing.T) {
 func TestBothAuthOptionsMissing(t *testing.T) {
 	t.Parallel()
 
-	options, err := SetConfigOptions("https://example.com", "", "")
+	options, err := SetConfigOptions("https://example.com", "", "", "")
 	assert.ErrorContains(t, err, "auth-token or auth-key-path")
 	assert.Nil(t, options)
 }
@@ -25,7 +25,7 @@ func TestBothAuthOptionsMissing(t *testing.T) {
 func TestBothAuthOptionsSet(t *testing.T) {
 	t.Parallel()
 
-	options, err := SetConfigOptions("https://example.com", "token", "key/path")
+	options, err := SetConfigOptions("https://example.com", "token", "key/path", "")
 	assert.ErrorContains(t, err, "auth-token or auth-key-path")
 	assert.Nil(t, options)
 }
@@ -33,7 +33,7 @@ func TestBothAuthOptionsSet(t *testing.T) {
 func TestBearerTokenSet(t *testing.T) {
 	t.Parallel()
 
-	options, err := SetConfigOptions("https://example.com", "token", "")
+	options, err := SetConfigOptions("https://example.com", "token", "", "")
 	assert.NoError(t, err)
 	assert.Len(t, options, 3)
 }
@@ -41,7 +41,15 @@ func TestBearerTokenSet(t *testing.T) {
 func TestKeyPathSet(t *testing.T) {
 	t.Parallel()
 
-	options, err := SetConfigOptions("https://example.com", "", "key/path")
+	options, err := SetConfigOptions("https://example.com", "", "key/path", "")
 	assert.NoError(t, err)
-	assert.Len(t, options, 3)
+	assert.Len(t, options, 4)
+}
+
+func TestKeyPathAndURLSet(t *testing.T) {
+	t.Parallel()
+
+	options, err := SetConfigOptions("https://example.com", "", "key/path", "https://alternative.url.stackit.cloud/token")
+	assert.NoError(t, err)
+	assert.Len(t, options, 5)
 }
