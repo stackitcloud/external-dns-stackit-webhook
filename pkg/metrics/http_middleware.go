@@ -92,7 +92,7 @@ func NewHttpApiMetrics() HttpApiMetrics {
 		httpRequest: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: "http_requests_total",
 			Help: "The total number of processed http requests",
-		}, []string{"method", "path", "status_code"}),
+		}, []string{"method", "path", "status_code"}), //nolint:goconst // makes no sense to replace here
 		httpRequestContentLength: promauto.NewCounterVec(prometheus.CounterOpts{
 			Name: "http_requests_content_length_total",
 			Help: "The umber of bytes received in each http request",
