@@ -10,6 +10,7 @@ import (
 	"sigs.k8s.io/external-dns/endpoint"
 )
 
+//nolint:gocognit // keeps one end-to-end behavior test in a single function
 func TestModifyChange(t *testing.T) {
 	t.Parallel()
 
