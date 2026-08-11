@@ -80,3 +80,55 @@ license-check: $(GO_LICENSES) reports ## Check licenses against code.
 .PHONY: license-report
 license-report: $(GO_LICENSES) reports ## Create licenses report against code.
 	$(GO_LICENSES) report --include_tests --ignore $(LICENCES_IGNORE_LIST) ./... > ./reports/licenses/licenses-list.csv
+
+# ==============================================================================
+# E2E Local Testing
+# ==============================================================================
+
+E2E_TMP_DIR = tests/e2e-tmp
+
+.PHONY: build-linux
+build-linux:
+	CGO_ENABLED=0 GOOS=linux GOARCH=$(shell go env GOARCH) go build -ldflags "-s -w" -o ./external-dns-stackit-webhook -v cmd/webhook/main.go
+
+.PHONY: docker-build-e2e
+docker-build-e2e: build-linux
+	docker build -t stackitcloud/external-dns-stackit-webhook:e2e -f Dockerfile .
+	rm ./external-dns-stackit-webhook # Clean up the binary after build
+
+# Run this to test the webhook locally
+# make test-e2e-local \
+    PROJECT_ID="your-project-id" \
+    ZONE_NAME="your.test.zone.cloud" \
+    AUTH_KEY_PATH="/absolute/path/to/your/sa.json"
+.PHONY: test-e2e-local
+test-e2e-local: docker-build-e2e
+	@if [ -z "$(PROJECT_ID)" ] || [ -z "$(ZONE_NAME)" ] || [ -z "$(AUTH_KEY_PATH)" ]; then \
+		echo "Error: Missing PROJECT_ID, ZONE_NAME, or AUTH_KEY_PATH environment variables."; \
+		exit 1; \
+	fi
+	@echo "=> Creating Kind cluster..."
+	kind create cluster --name stackit-e2e || true
+	@echo "=> Loading image into Kind..."
+	kind load docker-image stackitcloud/external-dns-stackit-webhook:e2e --name stackit-e2e
+	@echo "=> Setting up STACKIT credentials..."
+	kubectl create secret generic external-dns-stackit-webhook \
+		--from-file=sa.json=$(AUTH_KEY_PATH) \
+		--dry-run=client -o yaml | kubectl apply -f -
+	@echo "=> Preparing test manifests..."
+	rm -rf $(E2E_TMP_DIR)
+	cp -r tests/e2e $(E2E_TMP_DIR)
+	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${PROJECT_ID}/$(PROJECT_ID)/g" {} +
+	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${ZONE_NAME}/$(ZONE_NAME)/g" {} +
+	find $(E2E_TMP_DIR) -type f -name "*.bak" -delete
+	@echo "=> Deploying ExternalDNS and Webhook..."
+	kubectl apply -f $(E2E_TMP_DIR)/deploy/external-dns.yaml
+	kubectl wait --for=condition=available --timeout=60s deployment/external-dns
+	@echo "=> Running Kuttl Tests..."
+	cd $(E2E_TMP_DIR) && kubectl kuttl test
+	@echo "=> Cleaning up templates..."
+	rm -rf $(E2E_TMP_DIR)
+
+.PHONY: clean-e2e-local
+clean-e2e-local:
+	kind delete cluster --name stackit-e2e

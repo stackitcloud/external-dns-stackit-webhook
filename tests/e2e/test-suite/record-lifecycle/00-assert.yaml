@@ -1,0 +1,7 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 120
+commands:
+      - script: ../../scripts/check-dns.sh A "e2e-a.${ZONE_NAME}" "10.0.0.1"
+      - script: ../../scripts/check-dns.sh AAAA "e2e-aaaa.${ZONE_NAME}" "2001:db8::1"
+      - script: ../../scripts/check-dns.sh CNAME "e2e-cname.${ZONE_NAME}" "e2e-a.${ZONE_NAME}"
