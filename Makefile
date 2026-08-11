@@ -118,18 +118,28 @@ test-e2e-local: docker-build-e2e
 	@echo "=> Preparing test manifests..."
 	rm -rf $(E2E_TMP_DIR)
 	cp -r tests/e2e $(E2E_TMP_DIR)
+
+	# 1. Strip Windows line-endings (CRLF) that cause 'fork/exec no such file' errors in Linux!
+	sed -i.bak 's/\r$$//' $(E2E_TMP_DIR)/scripts/*.sh
 	chmod +x $(E2E_TMP_DIR)/scripts/*.sh
-	# Updated to include .sh files in the sed replacement!
-	find $(E2E_TMP_DIR) -type f \( -name "*.yaml" -o -name "*.sh" \) -exec sed -i.bak "s/\$${PROJECT_ID}/$(PROJECT_ID)/g" {} +
-	find $(E2E_TMP_DIR) -type f \( -name "*.yaml" -o -name "*.sh" \) -exec sed -i.bak "s/\$${ZONE_NAME}/$(ZONE_NAME)/g" {} +
+
+	# 2. Only run replacement on YAML files now
+	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${PROJECT_ID}/$(PROJECT_ID)/g" {} +
+	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${ZONE_NAME}/$(ZONE_NAME)/g" {} +
 	find $(E2E_TMP_DIR) -type f -name "*.bak" -delete
+
 	@echo "=> Deploying ExternalDNS and Webhook..."
 	kubectl apply -f $(E2E_TMP_DIR)/deploy/external-dns.yaml
 	kubectl wait --for=condition=available --timeout=60s deployment/external-dns
+
 	@echo "=> Running Kuttl Tests..."
-	cd $(E2E_TMP_DIR) && kubectl kuttl test
-	@echo "=> Cleaning up templates..."
-	rm -rf $(E2E_TMP_DIR)
+	cd $(E2E_TMP_DIR) && \
+	kubectl kuttl test; \
+	RET=$$?; \
+	echo "=> Cleaning up local test environment..."; \
+	kind delete cluster --name stackit-e2e; \
+	cd .. && rm -rf $(E2E_TMP_DIR); \
+	exit $$RET
 
 .PHONY: clean-e2e-local
 clean-e2e-local:
