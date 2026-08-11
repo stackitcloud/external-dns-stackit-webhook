@@ -1,34 +1,45 @@
 #!/bin/sh
+
+# Enable shell debugging: prints every command and variable expansion to stdout
+set -x
+
 RECORD_TYPE="$1"
 RECORD_NAME="$2"
 EXPECTED_RESULT="$3"
 
-# 1. Dynamically fetch one of the authoritative nameservers for your zone
+echo "=== DEBUG: DNS CHECK STARTED ==="
+echo "Type: $RECORD_TYPE | Name: $RECORD_NAME | Expected: '$EXPECTED_RESULT' | Zone: '${ZONE_NAME}'"
+
+# 1. Fetch Auth NS
 AUTH_NS=$(dig +short NS "${ZONE_NAME}" | head -n 1)
+echo "DEBUG: Discovered Auth NS: '$AUTH_NS'"
 
 if [ -z "$AUTH_NS" ]; then
-  echo "Error: Could not determine authoritative nameserver for ${ZONE_NAME}"
+  echo "ERROR: Could not determine authoritative nameserver for ${ZONE_NAME}"
+  # Sleep so the log isn't spammed 100 times a second
+  sleep 5
   exit 1
 fi
 
-# 2. Query the authoritative nameserver directly
+# 2. Query the authoritative nameserver
 RESULT=$(dig "@$AUTH_NS" -t "$RECORD_TYPE" +short "${RECORD_NAME}")
+echo "DEBUG: Dig Result: '$RESULT'"
 
 # 3. Check for deletion or creation
 if [ -z "$EXPECTED_RESULT" ]; then
   # Deletion Case
   if [ -z "$RESULT" ]; then
-    echo "DNS $RECORD_TYPE record $RECORD_NAME successfully deleted from $AUTH_NS!"
+    echo "SUCCESS: $RECORD_TYPE record $RECORD_NAME successfully deleted!"
     exit 0
   fi
 else
-  # Creation Case (Using grep to handle quotes around TXT records or trailing dots on CNAMEs)
+  # Creation Case
   if echo "$RESULT" | grep -q "$EXPECTED_RESULT"; then
-    echo "DNS $RECORD_TYPE record $RECORD_NAME successfully verified on $AUTH_NS!"
+    echo "SUCCESS: $RECORD_TYPE record $RECORD_NAME verified!"
     exit 0
   fi
 fi
 
-# 4. If not matched, print wait message, sleep, and exit 1 so Kuttl retries
-echo "Waiting for DNS update... (Type: $RECORD_TYPE, Name: $RECORD_NAME, Expected: '$EXPECTED_RESULT', Got: '$RESULT')"
+echo "FAILED: Condition not met. Retrying in 5s..."
+sleep 5
 exit 1

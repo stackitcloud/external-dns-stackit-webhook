@@ -119,8 +119,9 @@ test-e2e-local: docker-build-e2e
 	rm -rf $(E2E_TMP_DIR)
 	cp -r tests/e2e $(E2E_TMP_DIR)
 	chmod +x $(E2E_TMP_DIR)/scripts/*.sh
-	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${PROJECT_ID}/$(PROJECT_ID)/g" {} +
-	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${ZONE_NAME}/$(ZONE_NAME)/g" {} +
+	# Updated to include .sh files in the sed replacement!
+	find $(E2E_TMP_DIR) -type f \( -name "*.yaml" -o -name "*.sh" \) -exec sed -i.bak "s/\$${PROJECT_ID}/$(PROJECT_ID)/g" {} +
+	find $(E2E_TMP_DIR) -type f \( -name "*.yaml" -o -name "*.sh" \) -exec sed -i.bak "s/\$${ZONE_NAME}/$(ZONE_NAME)/g" {} +
 	find $(E2E_TMP_DIR) -type f -name "*.bak" -delete
 	@echo "=> Deploying ExternalDNS and Webhook..."
 	kubectl apply -f $(E2E_TMP_DIR)/deploy/external-dns.yaml
