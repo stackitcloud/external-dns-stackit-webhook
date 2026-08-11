@@ -118,6 +118,7 @@ test-e2e-local: docker-build-e2e
 	@echo "=> Preparing test manifests..."
 	rm -rf $(E2E_TMP_DIR)
 	cp -r tests/e2e $(E2E_TMP_DIR)
+	chmod +x $(E2E_TMP_DIR)/scripts/*.sh
 	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${PROJECT_ID}/$(PROJECT_ID)/g" {} +
 	find $(E2E_TMP_DIR) -type f -name "*.yaml" -exec sed -i.bak "s/\$${ZONE_NAME}/$(ZONE_NAME)/g" {} +
 	find $(E2E_TMP_DIR) -type f -name "*.bak" -delete

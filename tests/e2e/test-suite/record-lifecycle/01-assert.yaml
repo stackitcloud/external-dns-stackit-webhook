@@ -2,6 +2,6 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 timeout: 60
 commands:
-        - script: ../../scripts/check-dns.sh A "e2e-a.${ZONE_NAME}" ""
-        - script: ../../scripts/check-dns.sh AAAA "e2e-aaaa.${ZONE_NAME}" ""
-        - script: ../../scripts/check-dns.sh CNAME "e2e-cname.${ZONE_NAME}" ""
+        - script: sh ../../scripts/check-dns.sh A "e2e-a.${ZONE_NAME}" ""
+        - script: sh ../../scripts/check-dns.sh AAAA "e2e-aaaa.${ZONE_NAME}" ""
+        - script: sh ../../scripts/check-dns.sh CNAME "e2e-cname.${ZONE_NAME}" ""
