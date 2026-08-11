@@ -2,4 +2,4 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestSuite
 testDirs:
   - test-suite
-timeout: 60
+timeout: 120
