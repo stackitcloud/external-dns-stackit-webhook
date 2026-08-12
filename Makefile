@@ -97,11 +97,6 @@ docker-build-e2e: build-linux
 	rm ./external-dns-stackit-webhook # Clean up the binary after build
 
 # Run this to test the webhook locally
-# make test-e2e-local \
-    PROJECT_ID="your-project-id" \
-    ZONE_NAME="your.test.zone.cloud" \
-    AUTH_KEY_PATH="/absolute/path/to/your/sa.json"
-.PHONY: test-e2e-local
 test-e2e-local: docker-build-e2e
 	@if [ -z "$(PROJECT_ID)" ] || [ -z "$(ZONE_NAME)" ] || [ -z "$(AUTH_KEY_PATH)" ]; then \
 		echo "Error: Missing PROJECT_ID, ZONE_NAME, or AUTH_KEY_PATH environment variables."; \
@@ -132,9 +127,10 @@ test-e2e-local: docker-build-e2e
 	RET=$$?; \
 	echo "=> Cleaning up local test environment..."; \
 	kind delete cluster --name stackit-e2e; \
-	cd .. && rm -rf $(E2E_TMP_DIR); \
+	cd ../.. && rm -rf $(E2E_TMP_DIR); \
 	exit $$RET
 
 .PHONY: clean-e2e-local
 clean-e2e-local:
 	kind delete cluster --name stackit-e2e
+	rm -rf $(E2E_TMP_DIR)

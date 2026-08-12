@@ -361,3 +361,16 @@ Test the code:
 ```bash
 make test
 ```
+
+### E2E Testing
+
+End-to-end integration tests are orchestrated using [Kuttl](https://kuttl.dev/) and run against a dynamically generated [Kind](https://kind.sigs.k8s.io/) cluster. The test suite builds the webhook locally, deploys it alongside ExternalDNS, and directly verifies real DNS record propagation (A, AAAA, CNAME) against the STACKIT authoritative nameservers.
+
+To run the E2E test suite locally, ensure you have Docker and `kind` installed, then execute:
+
+```bash
+make test-e2e-local \
+  PROJECT_ID="your-project-id" \
+  ZONE_NAME="your.test.zone.cloud" \
+  AUTH_KEY_PATH="/absolute/path/to/your/sa.json"
+```
