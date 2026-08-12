@@ -1,0 +1,37 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 120
+commands:
+    - script: |
+        check_deleted() {
+          RECORD_TYPE=$1
+          RECORD_NAME=$2
+          ZONE=$3
+        
+          AUTH_NS=$(dig +short NS "$ZONE" | head -n 1)
+          if [ -z "$AUTH_NS" ]; then
+            echo "ERROR: Could not determine authoritative nameserver for $ZONE"
+            return 1
+          fi
+        
+          RESULT=$(dig "@$AUTH_NS" -t "$RECORD_TYPE" +short "$RECORD_NAME")
+          echo "DEBUG: Dig Result for $RECORD_NAME: '$RESULT'"
+        
+          if [ -z "$RESULT" ]; then
+            echo "SUCCESS: $RECORD_TYPE record $RECORD_NAME successfully deleted!"
+            return 0
+          fi
+        
+          echo "FAILED: $RECORD_NAME still exists."
+          return 1
+        }
+        
+        check_deleted A "e2e-a.${ZONE_NAME}" "${ZONE_NAME}" && \
+        check_deleted AAAA "e2e-aaaa.${ZONE_NAME}" "${ZONE_NAME}" && \
+        check_deleted CNAME "e2e-cname.${ZONE_NAME}" "${ZONE_NAME}"
+        
+        if [ $? -ne 0 ]; then
+          sleep 5
+          exit 1
+        fi
+        exit 0

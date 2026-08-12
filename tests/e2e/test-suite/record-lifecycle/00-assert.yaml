@@ -1,0 +1,39 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 120
+commands:
+    - script: |
+        check_record() {
+          RECORD_TYPE=$1
+          RECORD_NAME=$2
+          EXPECTED_RESULT=$3
+          ZONE=$4
+        
+          AUTH_NS=$(dig +short NS "$ZONE" | head -n 1)
+          if [ -z "$AUTH_NS" ]; then
+            echo "ERROR: Could not determine authoritative nameserver for $ZONE"
+            return 1
+          fi
+        
+          RESULT=$(dig "@$AUTH_NS" -t "$RECORD_TYPE" +short "$RECORD_NAME")
+          echo "DEBUG: Dig Result for $RECORD_NAME: '$RESULT'"
+        
+          if echo "$RESULT" | grep -q "$EXPECTED_RESULT"; then
+            echo "SUCCESS: $RECORD_TYPE record $RECORD_NAME verified!"
+            return 0
+          fi
+        
+          echo "FAILED: Condition not met for $RECORD_NAME."
+          return 1
+        }
+        
+        # Run all checks. If any fail, the chain short-circuits and we exit 1 to trigger a Kuttl retry.
+        check_record A "e2e-a.${ZONE_NAME}" "10.0.0.1" "${ZONE_NAME}" && \
+        check_record AAAA "e2e-aaaa.${ZONE_NAME}" "2001:db8::1" "${ZONE_NAME}" && \
+        check_record CNAME "e2e-cname.${ZONE_NAME}" "e2e-a.${ZONE_NAME}." "${ZONE_NAME}"
+        
+        if [ $? -ne 0 ]; then
+          sleep 5
+          exit 1
+        fi
+        exit 0

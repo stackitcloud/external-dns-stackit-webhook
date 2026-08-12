@@ -1,0 +1,38 @@
+# 1. Triggers an A Record (IPv4)
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service-a
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "e2e-a.${ZONE_NAME}"
+    external-dns.alpha.kubernetes.io/target: "10.0.0.1"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+---
+# 2. Triggers an AAAA Record (IPv6)
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service-aaaa
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "e2e-aaaa.${ZONE_NAME}"
+    external-dns.alpha.kubernetes.io/target: "2001:db8::1"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+---
+# 3. Triggers a CNAME Record (Hostname)
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-service-cname
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: "e2e-cname.${ZONE_NAME}"
+    external-dns.alpha.kubernetes.io/target: "e2e-a.${ZONE_NAME}"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
