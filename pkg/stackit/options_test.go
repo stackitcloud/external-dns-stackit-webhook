@@ -8,48 +8,93 @@ import (
 
 func TestMissingBaseURL(t *testing.T) {
 	t.Parallel()
-
-	options, err := SetConfigOptions("", "", "", "")
+	cfg := WebhookAuthConfig{}
+	options, err := SetConfigOptions(&cfg)
 	assert.ErrorContains(t, err, "base-url")
 	assert.Nil(t, options)
 }
 
-func TestBothAuthOptionsMissing(t *testing.T) {
+func TestNoAuthOptionsSet_FallsBackToDefaultAuth(t *testing.T) {
 	t.Parallel()
-
-	options, err := SetConfigOptions("https://example.com", "", "", "")
-	assert.ErrorContains(t, err, "auth-token or auth-key-path")
-	assert.Nil(t, options)
+	cfg := WebhookAuthConfig{BaseURL: "https://example.com"}
+	options, err := SetConfigOptions(&cfg)
+	assert.NoError(t, err)
+	assert.Len(t, options, 3)
 }
 
-func TestBothAuthOptionsSet(t *testing.T) {
+func TestMultipleAuthOptionsSet_ReturnsError(t *testing.T) {
 	t.Parallel()
+	cfg := WebhookAuthConfig{
+		BaseURL: "https://example.com",
+		Token:   "token",
+		KeyPath: "key/path",
+	}
+	options, err := SetConfigOptions(&cfg)
+	assert.ErrorContains(t, err, "ambiguous authentication configuration")
+	assert.Nil(t, options)
 
-	options, err := SetConfigOptions("https://example.com", "token", "key/path", "")
-	assert.ErrorContains(t, err, "auth-token or auth-key-path")
+	cfg = WebhookAuthConfig{
+		BaseURL:    "https://example.com",
+		KeyPath:    "key/path",
+		WIFEnabled: true,
+	}
+	options, err = SetConfigOptions(&cfg)
+	assert.ErrorContains(t, err, "ambiguous authentication configuration")
 	assert.Nil(t, options)
 }
 
 func TestBearerTokenSet(t *testing.T) {
 	t.Parallel()
-
-	options, err := SetConfigOptions("https://example.com", "token", "", "")
-	assert.NoError(t, err)
-	assert.Len(t, options, 3)
-}
-
-func TestKeyPathSet(t *testing.T) {
-	t.Parallel()
-
-	options, err := SetConfigOptions("https://example.com", "", "key/path", "")
+	cfg := WebhookAuthConfig{
+		BaseURL: "https://example.com",
+		Token:   "token",
+	}
+	options, err := SetConfigOptions(&cfg)
 	assert.NoError(t, err)
 	assert.Len(t, options, 4)
 }
 
+func TestKeyPathSet(t *testing.T) {
+	t.Parallel()
+	cfg := WebhookAuthConfig{
+		BaseURL: "https://example.com",
+		KeyPath: "key/path",
+	}
+	options, err := SetConfigOptions(&cfg)
+	assert.NoError(t, err)
+	assert.Len(t, options, 4)
+}
+
+func TestWIFSet_WithoutTokenPath(t *testing.T) {
+	t.Parallel()
+	cfg := WebhookAuthConfig{
+		BaseURL:    "https://example.com",
+		WIFEnabled: true,
+	}
+	options, err := SetConfigOptions(&cfg)
+	assert.NoError(t, err)
+	assert.Len(t, options, 4)
+}
+
+func TestWIFSet_WithTokenPath(t *testing.T) {
+	t.Parallel()
+	cfg := WebhookAuthConfig{
+		BaseURL:      "https://example.com",
+		WIFTokenPath: "/var/run/secrets/tokens/stackit-token",
+	}
+	options, err := SetConfigOptions(&cfg)
+	assert.NoError(t, err)
+	assert.Len(t, options, 5)
+}
+
 func TestKeyPathAndURLSet(t *testing.T) {
 	t.Parallel()
-
-	options, err := SetConfigOptions("https://example.com", "", "key/path", "https://alternative.url.stackit.cloud/token")
+	cfg := WebhookAuthConfig{
+		BaseURL:  "https://example.com",
+		KeyPath:  "key/path",
+		TokenURL: "https://alternative.url.stackit.cloud/token",
+	}
+	options, err := SetConfigOptions(&cfg)
 	assert.NoError(t, err)
 	assert.Len(t, options, 5)
 }
