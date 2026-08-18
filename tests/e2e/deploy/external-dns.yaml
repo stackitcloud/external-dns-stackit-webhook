@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-dns
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: external-dns
+rules:
+  - apiGroups: [""]
+    resources: ["services","endpoints","pods","nodes"]
+    verbs: ["get","watch","list"]
+  - apiGroups: ["extensions","networking.k8s.io"]
+    resources: ["ingresses"]
+    verbs: ["get","watch","list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: external-dns-viewer
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: external-dns
+subjects:
+  - kind: ServiceAccount
+    name: external-dns
+    namespace: default
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: external-dns
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: external-dns
+  template:
+    metadata:
+      labels:
+        app: external-dns
+    spec:
+      serviceAccountName: external-dns
+      volumes:
+        - name: stackit-sa-key
+          secret:
+            secretName: external-dns-stackit-webhook
+            items:
+              - key: sa.json
+                path: sa.json
+      containers:
+        - name: external-dns
+          image: registry.k8s.io/external-dns/external-dns:v0.14.0
+          args:
+            - --log-level=info
+            - --interval=10s
+            - --source=service
+            - --policy=sync
+            - --provider=webhook
+            - --domain-filter=${ZONE_NAME}
+            - --txt-prefix=txt-
+        - name: webhook
+          image: stackitcloud/external-dns-stackit-webhook:e2e
+          imagePullPolicy: Never # Forces the use of our sideloaded local build
+          args:
+            - --project-id=${PROJECT_ID}
+            - --log-level=debug
+          ports:
+            - name: http
+              containerPort: 8888
+          env:
+            - name: AUTH_KEY_PATH
+              value: /var/run/secrets/stackit/sa.json
+          volumeMounts:
+            - name: stackit-sa-key
+              mountPath: /var/run/secrets/stackit
+              readOnly: true

@@ -1,0 +1,47 @@
+name: E2E Integration Tests
+
+on:
+  pull_request:
+    branches: ["main", "release/**"]
+  schedule:
+    - cron: '0 2 * * *' # Runs daily at 2:00 AM UTC
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v7
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: 'go.mod'
+
+      - name: Install Dependencies (Kind, Kuttl, Dig)
+        run: |
+          # Install dig
+          sudo apt-get update && sudo apt-get install -y dnsutils
+          
+          # Install Kind
+          curl -sSLo ./kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64
+          chmod +x ./kind
+          sudo mv ./kind /usr/local/bin/kind
+          
+          # Install Kuttl
+          curl -sSLo kubectl-kuttl https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64
+          chmod +x kubectl-kuttl
+          sudo mv kubectl-kuttl /usr/local/bin/
+
+      - name: Prepare STACKIT Service Account Key
+        run: |
+          # Write the secret from GitHub Actions into a temporary file so the Makefile can mount it
+          echo '${{ secrets.STACKIT_SERVICE_ACCOUNT_KEY }}' > /tmp/sa.json
+
+      - name: Run E2E Tests
+        env:
+          PROJECT_ID: ${{ secrets.STACKIT_PROJECT_ID }}
+          ZONE_NAME: ${{ secrets.STACKIT_ZONE_NAME }}
+          AUTH_KEY_PATH: /tmp/sa.json
+        run: |
+          make test-e2e-local
