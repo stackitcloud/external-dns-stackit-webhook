@@ -216,7 +216,25 @@ spec:
 
 If your cluster supports Workload Identity Federation, you can avoid managing long-lived Service Account keys entirely by projecting a short-lived token into the webhook container.
 
-For prerequisites and cluster setup, refer to the [STACKIT Workload Identity Federation documentation](https://docs.stackit.cloud/products/runtime/kubernetes-engine/how-tos/workload-identity/).
+For prerequisites and cluster setup, refer to the [Use Workload Identity STACKIT documentation](https://docs.stackit.cloud/de/products/runtime/kubernetes-engine/how-tos/workload-identity/).
+
+If you are using STACKIT Kubernetes Engine (SKE) or have the `stackit-pod-identity-webhook` installed, you do not need to manually mount the projected token volumes. You simply annotate the ServiceAccount, and the identity webhook will automatically inject the token and `STACKIT_FEDERATED_TOKEN_FILE` environment variable into the pod.
+
+```yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: external-dns
+  namespace: default
+  annotations:
+    # Specify the STACKIT Service Account email to assume the identity of
+    workload-identity.stackit.cloud/service-account-email: "your-service-account@sa.stackit.cloud"
+  labels:
+    app.kubernetes.io/name: external-dns
+    app.kubernetes.io/instance: external-dns
+```
+
+In your deployment, simply pass the `--auth-wif` flag to explicitly enforce the federated flow:
 
 ```yaml
         - name: webhook
@@ -224,22 +242,6 @@ For prerequisites and cluster setup, refer to the [STACKIT Workload Identity Fed
           args:
             - --project-id=c158c736-0300-4044-95c4-b7d404279b35
             - --auth-wif
-          env:
-            # The SDK natively looks for this environment variable to locate the projected token
-            - name: STACKIT_FEDERATED_TOKEN_FILE
-              value: /var/run/secrets/tokens/stackit-token
-          volumeMounts:
-            - name: stackit-token
-              mountPath: /var/run/secrets/tokens
-              readOnly: true
-      volumes:
-        - name: stackit-token
-          projected:
-            sources:
-              - serviceAccountToken:
-                  audience: [https://stackit.cloud](https://stackit.cloud)
-                  expirationSeconds: 3600
-                  path: stackit-token
 ```
 
 ## Configuration
@@ -249,7 +251,7 @@ The configuration of the STACKIT webhook is accomplished through command-line ar
 ### Authentication Flags (Choose ONE)
 - `--auth-key-path`/`AUTH_KEY_PATH`: Defines the file path of the Service Account key JSON.
 - `--auth-wif`/`AUTH_WIF` (boolean): Explicitly enables Workload Identity Federation (WIF) authentication.
-- `--auth-wif-token-path`/`AUTH_WIF_TOKEN_PATH` (optional): Defines a custom file path for the federated JWT token for WIF authentication. This is generally only needed if you are overriding standard Kubernetes volume projections.
+- `--auth-wif-token-path`/`AUTH_WIF_TOKEN_PATH` (optional): Defines a custom file path for the federated JWT token for WIF authentication. This is generally only needed if you are overriding standard Kubernetes volume projections manually.
 
 *Note: If no explicit `--auth-*` flags are provided, the webhook delegates authentication to the STACKIT SDK, which will automatically search the environment for standard SDK variables (e.g., `STACKIT_FEDERATED_TOKEN_FILE`, `STACKIT_SERVICE_ACCOUNT_KEY_PATH`) or a local `~/.stackit/credentials.json` file.*
 
