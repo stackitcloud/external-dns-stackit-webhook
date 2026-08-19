@@ -25,33 +25,13 @@ func TestNoAuthOptionsSet_FallsBackToDefaultAuth(t *testing.T) {
 func TestMultipleAuthOptionsSet_ReturnsError(t *testing.T) {
 	t.Parallel()
 	cfg := WebhookAuthConfig{
-		BaseURL: "https://example.com",
-		Token:   "token",
-		KeyPath: "key/path",
-	}
-	options, err := SetConfigOptions(&cfg)
-	assert.ErrorContains(t, err, "ambiguous authentication configuration")
-	assert.Nil(t, options)
-
-	cfg = WebhookAuthConfig{
 		BaseURL:    "https://example.com",
 		KeyPath:    "key/path",
 		WIFEnabled: true,
 	}
-	options, err = SetConfigOptions(&cfg)
+	options, err := SetConfigOptions(&cfg)
 	assert.ErrorContains(t, err, "ambiguous authentication configuration")
 	assert.Nil(t, options)
-}
-
-func TestBearerTokenSet(t *testing.T) {
-	t.Parallel()
-	cfg := WebhookAuthConfig{
-		BaseURL: "https://example.com",
-		Token:   "token",
-	}
-	options, err := SetConfigOptions(&cfg)
-	assert.NoError(t, err)
-	assert.Len(t, options, 4)
 }
 
 func TestKeyPathSet(t *testing.T) {

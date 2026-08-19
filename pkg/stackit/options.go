@@ -13,7 +13,6 @@ type AuthType int
 
 const (
 	AuthTypeDefault AuthType = iota
-	AuthTypeExplicitToken
 	AuthTypeExplicitKey
 	AuthTypeExplicitWIF
 )
@@ -21,7 +20,6 @@ const (
 type WebhookAuthConfig struct {
 	BaseURL      string
 	TokenURL     string
-	Token        string
 	KeyPath      string
 	WIFEnabled   bool
 	WIFTokenPath string
@@ -30,9 +28,6 @@ type WebhookAuthConfig struct {
 func determineAuthType(cfg *WebhookAuthConfig) (AuthType, error) {
 	var activeTypes []AuthType
 
-	if len(cfg.Token) > 0 {
-		activeTypes = append(activeTypes, AuthTypeExplicitToken)
-	}
 	if len(cfg.KeyPath) > 0 {
 		activeTypes = append(activeTypes, AuthTypeExplicitKey)
 	}
@@ -41,7 +36,7 @@ func determineAuthType(cfg *WebhookAuthConfig) (AuthType, error) {
 	}
 
 	if len(activeTypes) > 1 {
-		return AuthTypeDefault, fmt.Errorf("ambiguous authentication configuration: specify at most one of auth-token, auth-key-path, or auth-wif/auth-wif-token-path")
+		return AuthTypeDefault, fmt.Errorf("ambiguous authentication configuration: specify at most one of auth-key-path or auth-wif/auth-wif-token-path")
 	}
 
 	if len(activeTypes) == 1 {
@@ -74,8 +69,6 @@ func SetConfigOptions(cfg *WebhookAuthConfig) ([]stackitconfig.ConfigurationOpti
 	}
 
 	switch authType {
-	case AuthTypeExplicitToken:
-		options = append(options, stackitconfig.WithToken(cfg.Token))
 	case AuthTypeExplicitKey:
 		options = append(options, stackitconfig.WithServiceAccountKeyPath(cfg.KeyPath))
 	case AuthTypeExplicitWIF:

@@ -20,7 +20,6 @@ import (
 
 var (
 	apiPort          string
-	authBearerToken  string
 	authKeyPath      string
 	authWif          bool
 	authWifTokenPath string
@@ -51,7 +50,6 @@ var rootCmd = &cobra.Command{
 		authConfig := &stackit.WebhookAuthConfig{
 			BaseURL:      baseUrl,
 			TokenURL:     tokenUrl,
-			Token:        authBearerToken,
 			KeyPath:      authKeyPath,
 			WIFEnabled:   authWif,
 			WIFTokenPath: authWifTokenPath,
@@ -123,9 +121,8 @@ func init() {
 	cobra.OnInitialize(initConfig)
 
 	rootCmd.PersistentFlags().StringVar(&apiPort, "api-port", "8888", "Specifies the port to listen on.")
-	rootCmd.PersistentFlags().StringVar(&authBearerToken, "auth-token", "", "Defines the authentication token for the STACKIT API. Mutually exclusive with 'auth-key-path' and 'auth-wif'.")
-	rootCmd.PersistentFlags().StringVar(&authKeyPath, "auth-key-path", "", "Defines the file path of the service account key for the STACKIT API. Mutually exclusive with 'auth-token' and 'auth-wif'.")
-	rootCmd.PersistentFlags().BoolVar(&authWif, "auth-wif", false, "Enables Workload Identity Federation (WIF) authentication explicitly.")
+	rootCmd.PersistentFlags().StringVar(&authKeyPath, "auth-key-path", "", "Defines the file path of the service account key for the STACKIT API. Mutually exclusive with 'auth-wif'.")
+	rootCmd.PersistentFlags().BoolVar(&authWif, "auth-wif", false, "Enables Workload Identity Federation (WIF) authentication explicitly. Mutually exclusive with 'auth-key-path'.")
 	rootCmd.PersistentFlags().StringVar(&authWifTokenPath, "auth-wif-token-path", "", "Defines a custom file path for the federated JWT token for WIF authentication.")
 	rootCmd.PersistentFlags().StringVar(&tokenUrl, "token-url", "", "Defines the authentication token endpoint for the STACKIT API.")
 	rootCmd.PersistentFlags().StringVar(&baseUrl, "base-url", "https://dns.api.stackit.cloud", "Identifies the Base URL for utilizing the API.")
