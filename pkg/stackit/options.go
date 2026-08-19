@@ -47,6 +47,9 @@ func determineAuthType(cfg *WebhookAuthConfig) (AuthType, error) {
 }
 
 func SetConfigOptions(cfg *WebhookAuthConfig) ([]stackitconfig.ConfigurationOption, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("auth configuration is required")
+	}
 	if len(cfg.BaseURL) == 0 {
 		return nil, fmt.Errorf("base-url is required")
 	}

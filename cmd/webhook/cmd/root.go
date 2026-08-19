@@ -57,7 +57,8 @@ var rootCmd = &cobra.Command{
 
 		stackitConfigOptions, err := stackit.SetConfigOptions(authConfig)
 		if err != nil {
-			logger.Fatal("failed to set STACKIT config options", zap.Error(err))
+			logger.Error("failed to set STACKIT config options", zap.Error(err))
+			panic(err)
 		}
 
 		stackitProvider, err := stackitprovider.NewStackitDNSProvider(
@@ -71,13 +72,15 @@ var rootCmd = &cobra.Command{
 			stackitConfigOptions...,
 		)
 		if err != nil {
-			logger.Fatal("failed to initialize STACKIT DNS provider", zap.Error(err))
+			logger.Error("failed to initialize STACKIT DNS provider", zap.Error(err))
+			panic(err)
 		}
 
 		app := api.New(logger.With(zap.String("component", "api")), metrics.NewHttpApiMetrics(), stackitProvider)
 		err = app.Listen(apiPort)
 		if err != nil {
-			logger.Fatal("server error", zap.Error(err))
+			logger.Error("server error", zap.Error(err))
+			panic(err)
 		}
 	},
 }

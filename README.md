@@ -358,7 +358,7 @@ There are two potential fixes:
 
 Run the app locally:
 ```bash
-export BASE_URL="[https://dns.api.stackit.cloud](https://dns.api.stackit.cloud)"
+export BASE_URL="https://dns.api.stackit.cloud"
 export PROJECT_ID="c158c736-0300-4044-95c4-b7d404279b35"
 export AUTH_KEY_PATH="/absolute/path/to/stackit-service-account-key.json"
 
