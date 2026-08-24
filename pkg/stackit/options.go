@@ -9,37 +9,78 @@ import (
 	stackitconfig "github.com/stackitcloud/stackit-sdk-go/core/config"
 )
 
-// SetConfigOptions sets the default config options for the STACKIT
-// client and determines which type of authorization to use, depending on the
-// passed bearerToken and keyPath parameters. If no baseURL or an invalid
-// combination of auth options is given (neither or both), the function returns
-// an error.
-func SetConfigOptions(baseURL, bearerToken, keyPath, tokenURL string) ([]stackitconfig.ConfigurationOption, error) {
-	if len(baseURL) == 0 {
+type AuthType int
+
+const (
+	AuthTypeDefault AuthType = iota
+	AuthTypeExplicitKey
+	AuthTypeExplicitWIF
+)
+
+type WebhookAuthConfig struct {
+	BaseURL      string
+	TokenURL     string
+	KeyPath      string
+	WIFEnabled   bool
+	WIFTokenPath string
+}
+
+func determineAuthType(cfg *WebhookAuthConfig) (AuthType, error) {
+	var activeTypes []AuthType
+
+	if len(cfg.KeyPath) > 0 {
+		activeTypes = append(activeTypes, AuthTypeExplicitKey)
+	}
+	if cfg.WIFEnabled || len(cfg.WIFTokenPath) > 0 {
+		activeTypes = append(activeTypes, AuthTypeExplicitWIF)
+	}
+
+	if len(activeTypes) > 1 {
+		return AuthTypeDefault, fmt.Errorf("ambiguous authentication configuration: specify at most one of auth-key-path or auth-wif/auth-wif-token-path")
+	}
+
+	if len(activeTypes) == 1 {
+		return activeTypes[0], nil
+	}
+
+	return AuthTypeDefault, nil
+}
+
+func SetConfigOptions(cfg *WebhookAuthConfig) ([]stackitconfig.ConfigurationOption, error) {
+	if cfg == nil {
+		return nil, fmt.Errorf("auth configuration is required")
+	}
+	if len(cfg.BaseURL) == 0 {
 		return nil, fmt.Errorf("base-url is required")
+	}
+
+	authType, err := determineAuthType(cfg)
+	if err != nil {
+		return nil, err
 	}
 
 	options := []stackitconfig.ConfigurationOption{
 		stackitconfig.WithHTTPClient(&http.Client{
 			Timeout: 10 * time.Second,
 		}),
-		stackitconfig.WithEndpoint(baseURL),
+		stackitconfig.WithEndpoint(cfg.BaseURL),
+		stackitconfig.WithBackgroundTokenRefresh(context.Background()),
 	}
 
-	bearerTokenSet := len(bearerToken) > 0
-	keyPathSet := len(keyPath) > 0
-
-	if (!bearerTokenSet && !keyPathSet) || (bearerTokenSet && keyPathSet) {
-		return nil, fmt.Errorf("exactly only one of auth-token or auth-key-path is required")
+	if len(cfg.TokenURL) > 0 {
+		options = append(options, stackitconfig.WithTokenEndpoint(cfg.TokenURL))
 	}
 
-	if bearerTokenSet {
-		return append(options, stackitconfig.WithToken(bearerToken)), nil
+	switch authType {
+	case AuthTypeExplicitKey:
+		options = append(options, stackitconfig.WithServiceAccountKeyPath(cfg.KeyPath))
+	case AuthTypeExplicitWIF:
+		options = append(options, stackitconfig.WithWorkloadIdentityFederationAuth())
+		if len(cfg.WIFTokenPath) > 0 {
+			options = append(options, stackitconfig.WithWorkloadIdentityFederationPath(cfg.WIFTokenPath))
+		}
+	case AuthTypeDefault:
 	}
-	if len(tokenURL) > 0 {
-		options = append(options, stackitconfig.WithTokenEndpoint(tokenURL))
-	}
-	options = append(options, stackitconfig.WithBackgroundTokenRefresh(context.Background()))
 
-	return append(options, stackitconfig.WithServiceAccountKeyPath(keyPath)), nil
+	return options, nil
 }
