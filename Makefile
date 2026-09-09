@@ -1,4 +1,4 @@
-GOLANGCI_VERSION = 2.12.2
+GOLANGCI_VERSION = 2.13.2
 LICENCES_IGNORE_LIST = $(shell cat licenses/licenses-ignore-list.txt)
 
 VERSION ?= 0.0.1
