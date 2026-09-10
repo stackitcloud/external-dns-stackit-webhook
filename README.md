@@ -38,6 +38,50 @@ kubectl -n default create secret generic external-dns-stackit-webhook \
   --from-file=sa.json=/path/to/stackit-service-account-key.json
 ```
 
+### Using external-dns Helm chart
+
+The [official external-dns Helm chart](https://kubernetes-sigs.github.io/external-dns/latest/charts/external-dns/) allows you to embed this webhook as a sidecar.
+The following values show a functional example (last tested with helm chart version `1.21.1`):
+
+```yaml
+policy: sync # set it to upsert-only if you don't want it to delete records
+extraArgs:
+  webhook-provider-url: http://localhost:8080
+provider:
+  name: webhook
+  webhook:
+    image:
+      repository: ghcr.io/stackitcloud/external-dns-stackit-webhook
+      tag: v0.3.9
+    args:
+      - --project-id=c158c736-0300-4044-95c4-b7d404279b35 # REPLACE THIS WITH YOUR Project ID
+    env:
+      - name: AUTH_KEY_PATH
+        value: /var/run/secrets/stackit/sa.json
+      - name: API_PORT
+        value: "8080"
+    extraVolumeMounts:
+      - name: stackit-sa-key
+        mountPath: /var/run/secrets/stackit
+        readOnly: true
+    securityContext:
+      capabilities:
+        drop:
+          - ALL
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 65534
+extraVolumes:
+  - name: stackit-sa-key
+    secret:
+      secretName: external-dns-stackit-webhook
+      items:
+        - key: sa.json
+          path: sa.json
+```
+
+### Kubectl
+
 ```shell
 kubectl apply -f - <<EOF
 apiVersion: v1
