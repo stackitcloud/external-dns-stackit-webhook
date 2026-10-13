@@ -4,7 +4,8 @@
     "group:allNonMajor",
     ":semanticCommits",
     ":semanticCommitTypeAll(chore)",
-    ":gitSignOff"
+    ":gitSignOff",
+    ":pinGitHubActionDigests"
   ],
   "dependencyDashboard": false,
   "packageRules": [
