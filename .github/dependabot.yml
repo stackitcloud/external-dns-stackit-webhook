@@ -14,6 +14,12 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Berlin"
+    cooldown:
+      default-days: 7
+    groups:
+      golang-dependencies:
+        patterns:
+          - "*"
     open-pull-requests-limit: 10
     reviewers:
       - "stackitcloud/dns"
@@ -42,6 +48,12 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Berlin"
+    cooldown:
+      default-days: 7
+    groups:
+      github-actions-dependencies:
+        patterns:
+          - "*"
     open-pull-requests-limit: 5
     reviewers:
       - "stackitcloud/dns"
@@ -62,6 +74,12 @@ updates:
       day: "monday"
       time: "06:00"
       timezone: "Europe/Berlin"
+    cooldown:
+      default-days: 7
+    groups:
+      docker-dependencies:
+        patterns:
+          - "*"
     open-pull-requests-limit: 5
     reviewers:
       - "stackitcloud/dns"
