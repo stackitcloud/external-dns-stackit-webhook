@@ -24,12 +24,12 @@ jobs:
           sudo apt-get update && sudo apt-get install -y dnsutils
           
           # Install Kind
-          curl -sSLo ./kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64
+          curl -sSLo ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-amd64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
           
           # Install Kuttl
-          curl -sSLo kubectl-kuttl https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64
+          curl -sSLo kubectl-kuttl https://github.com/kudobuilder/kuttl/releases/download/v0.26.0/kubectl-kuttl_0.26.0_linux_x86_64
           chmod +x kubectl-kuttl
           sudo mv kubectl-kuttl /usr/local/bin/
 
