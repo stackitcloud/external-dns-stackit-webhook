@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: 'go.mod'
 
@@ -24,12 +24,12 @@ jobs:
           sudo apt-get update && sudo apt-get install -y dnsutils
           
           # Install Kind
-          curl -sSLo ./kind https://kind.sigs.k8s.io/dl/v0.22.0/kind-linux-amd64
+          curl -sSLo ./kind https://kind.sigs.k8s.io/dl/v0.32.0/kind-linux-amd64
           chmod +x ./kind
           sudo mv ./kind /usr/local/bin/kind
           
           # Install Kuttl
-          curl -sSLo kubectl-kuttl https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64
+          curl -sSLo kubectl-kuttl https://github.com/kudobuilder/kuttl/releases/download/v0.26.0/kubectl-kuttl_0.26.0_linux_x86_64
           chmod +x kubectl-kuttl
           sudo mv kubectl-kuttl /usr/local/bin/
 

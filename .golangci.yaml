@@ -1,7 +1,7 @@
 version: "2"
 run:
   concurrency: 4
-  go: 1.26.4
+  go: "1.27"
   build-tags:
     - mytag
   issues-exit-code: 1
